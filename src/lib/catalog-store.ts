@@ -8,6 +8,7 @@ import type {
   Supplier,
   SupplierInput,
 } from "@/data/types";
+import { priceExFromIncl, priceInclFromEx, roundMoney } from "@/lib/format";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CATALOG_PATH = path.join(DATA_DIR, "catalog.json");
@@ -45,11 +46,28 @@ async function ensureCatalogFile(): Promise<void> {
 export async function readCatalog(): Promise<Catalog> {
   await ensureCatalogFile();
   const raw = await fs.readFile(CATALOG_PATH, "utf8");
-  const parsed = JSON.parse(raw) as Catalog;
+  const parsed = JSON.parse(raw) as {
+    suppliers?: Array<
+      Omit<Supplier, "products"> & {
+        products?: Array<ProductInput & { id?: string }>;
+      }
+    >;
+  };
   if (!parsed || !Array.isArray(parsed.suppliers)) {
     return { suppliers: [] };
   }
-  return parsed;
+
+  return {
+    suppliers: parsed.suppliers.map((supplier) => ({
+      ...supplier,
+      products: (supplier.products ?? []).map((product, index) =>
+        normalizeProduct(
+          product,
+          product.id?.trim() || `product-${index + 1}`,
+        ),
+      ),
+    })),
+  };
 }
 
 async function writeCatalog(catalog: Catalog): Promise<Catalog> {
@@ -93,17 +111,54 @@ function normalizeSupplierFields(input: SupplierInput) {
   };
 }
 
-function normalizeProduct(input: ProductInput, id: string): Product {
-  const price = Number(input.price);
-  if (!Number.isFinite(price) || price < 0) {
-    throw new Error("Product price must be a valid non-negative number.");
+function assertMoney(value: number, label: string): number {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} must be a valid non-negative number.`);
   }
+  return roundMoney(value);
+}
+
+function normalizeProduct(input: ProductInput, id: string): Product {
+  const legacyPrice =
+    input.priceExVat == null && input.priceInclVat == null && input.price != null
+      ? Number(input.price)
+      : null;
+
+  let priceExVat: number;
+  let priceInclVat: number;
+
+  if (input.priceExVat != null && input.priceInclVat != null) {
+    priceExVat = assertMoney(Number(input.priceExVat), "Price excluding VAT");
+    priceInclVat = assertMoney(Number(input.priceInclVat), "Price including VAT");
+  } else if (input.priceExVat != null) {
+    priceExVat = assertMoney(Number(input.priceExVat), "Price excluding VAT");
+    priceInclVat = priceInclFromEx(priceExVat);
+  } else if (input.priceInclVat != null) {
+    priceInclVat = assertMoney(Number(input.priceInclVat), "Price including VAT");
+    priceExVat = priceExFromIncl(priceInclVat);
+  } else if (legacyPrice != null) {
+    priceExVat = assertMoney(legacyPrice, "Product price");
+    priceInclVat = priceInclFromEx(priceExVat);
+  } else {
+    throw new Error("Product price excluding or including VAT is required.");
+  }
+
+  if (priceInclVat < priceExVat) {
+    throw new Error("Price including VAT cannot be lower than price excluding VAT.");
+  }
+
+  const image = (input.image ?? "").trim();
+  const imageAlt = (input.imageAlt ?? "").trim() || input.name.trim();
+
   return {
     id,
     name: input.name.trim(),
     unit: input.unit.trim(),
-    price,
     category: input.category.trim(),
+    image,
+    imageAlt,
+    priceExVat,
+    priceInclVat,
   };
 }
 

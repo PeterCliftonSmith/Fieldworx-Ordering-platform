@@ -9,7 +9,10 @@ type AddToOrderProps = {
   productId: string;
   productName: string;
   unit: string;
-  price: number;
+  image: string;
+  imageAlt: string;
+  priceExVat: number;
+  priceInclVat: number;
 };
 
 export function AddToOrder({
@@ -18,7 +21,10 @@ export function AddToOrder({
   productId,
   productName,
   unit,
-  price,
+  image,
+  imageAlt,
+  priceExVat,
+  priceInclVat,
 }: AddToOrderProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -31,7 +37,10 @@ export function AddToOrder({
       productId,
       name: productName,
       unit,
-      price,
+      image,
+      imageAlt,
+      priceExVat,
+      priceInclVat,
       quantity,
     });
     setJustAdded(true);

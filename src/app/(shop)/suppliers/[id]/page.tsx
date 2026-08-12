@@ -58,40 +58,48 @@ export default async function SupplierDetailPage({ params }: PageProps) {
               No products listed yet.
             </p>
           ) : (
-            <table className="product-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Unit</th>
-                  <th>Price</th>
-                  <th>
-                    <span className="sr-only">Add</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {supplier.products.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <p className="product-name">{product.name}</p>
-                      <p className="muted small">{product.category}</p>
-                    </td>
-                    <td>{product.unit}</td>
-                    <td>{formatZar(product.price)}</td>
-                    <td>
-                      <AddToOrder
-                        supplierId={supplier.id}
-                        supplierName={supplier.name}
-                        productId={product.id}
-                        productName={product.name}
-                        unit={product.unit}
-                        price={product.price}
+            <div className="product-list">
+              {supplier.products.map((product) => (
+                <article key={product.id} className="product-row">
+                  <div className="product-media">
+                    {product.image ? (
+                      <SupplierImage
+                        src={product.image}
+                        alt={product.imageAlt || product.name}
                       />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ) : (
+                      <div className="product-media-empty" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="product-copy">
+                    <p className="product-name">{product.name}</p>
+                    <p className="muted small">
+                      {product.category} · {product.unit}
+                    </p>
+                    <div className="product-prices">
+                      <p>
+                        <strong>{formatZar(product.priceExVat)}</strong>
+                        <span className="muted"> excl. VAT</span>
+                      </p>
+                      <p className="muted small">
+                        {formatZar(product.priceInclVat)} incl. VAT
+                      </p>
+                    </div>
+                  </div>
+                  <AddToOrder
+                    supplierId={supplier.id}
+                    supplierName={supplier.name}
+                    productId={product.id}
+                    productName={product.name}
+                    unit={product.unit}
+                    image={product.image}
+                    imageAlt={product.imageAlt || product.name}
+                    priceExVat={product.priceExVat}
+                    priceInclVat={product.priceInclVat}
+                  />
+                </article>
+              ))}
+            </div>
           )}
 
           <p style={{ marginTop: "1.5rem" }}>

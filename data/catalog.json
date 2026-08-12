@@ -14,36 +14,51 @@
           "id": "gv-tomato",
           "name": "Roma tomatoes",
           "unit": "kg",
-          "price": 28.5,
-          "category": "Vegetables"
+          "category": "Vegetables",
+          "image": "https://images.unsplash.com/photo-1546470427-e212b9d31075?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Roma tomatoes",
+          "priceExVat": 28.5,
+          "priceInclVat": 32.78
         },
         {
           "id": "gv-rocket",
           "name": "Wild rocket",
           "unit": "200g",
-          "price": 22,
-          "category": "Herbs & leaves"
+          "category": "Herbs & leaves",
+          "image": "https://images.unsplash.com/photo-1622206151224-4f8848486ce0?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Fresh wild rocket leaves",
+          "priceExVat": 22,
+          "priceInclVat": 25.3
         },
         {
           "id": "gv-onion",
           "name": "Brown onions",
           "unit": "10kg bag",
-          "price": 95,
-          "category": "Vegetables"
+          "category": "Vegetables",
+          "image": "https://images.unsplash.com/photo-1518977956812-cd3d11ea4d15?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Brown onions",
+          "priceExVat": 95,
+          "priceInclVat": 109.25
         },
         {
           "id": "gv-basil",
           "name": "Fresh basil",
           "unit": "bunch",
-          "price": 18,
-          "category": "Herbs & leaves"
+          "category": "Herbs & leaves",
+          "image": "https://images.unsplash.com/photo-1618375569909-3cda177bb0b1?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Fresh basil bunch",
+          "priceExVat": 18,
+          "priceInclVat": 20.7
         },
         {
           "id": "gv-potato",
           "name": "Medium potatoes",
           "unit": "10kg bag",
-          "price": 110,
-          "category": "Vegetables"
+          "category": "Vegetables",
+          "image": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Medium potatoes",
+          "priceExVat": 110,
+          "priceInclVat": 126.5
         }
       ]
     },
@@ -61,29 +76,41 @@
           "id": "ac-kingklip",
           "name": "Kingklip fillets",
           "unit": "kg",
-          "price": 245,
-          "category": "Fish"
+          "category": "Fish",
+          "image": "https://images.unsplash.com/photo-1519708227419-c100ac8b0d13?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Kingklip fillets",
+          "priceExVat": 245,
+          "priceInclVat": 281.75
         },
         {
           "id": "ac-mussels",
           "name": "Live mussels",
           "unit": "kg",
-          "price": 68,
-          "category": "Shellfish"
+          "category": "Shellfish",
+          "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Live mussels",
+          "priceExVat": 68,
+          "priceInclVat": 78.2
         },
         {
           "id": "ac-calamari",
           "name": "Calamari tubes",
           "unit": "kg",
-          "price": 165,
-          "category": "Shellfish"
+          "category": "Shellfish",
+          "image": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Calamari tubes",
+          "priceExVat": 165,
+          "priceInclVat": 189.75
         },
         {
           "id": "ac-salmon",
           "name": "Norwegian salmon",
           "unit": "side",
-          "price": 520,
-          "category": "Fish"
+          "category": "Fish",
+          "image": "https://images.unsplash.com/photo-1485921325833-c519f76c4927?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Salmon side",
+          "priceExVat": 520,
+          "priceInclVat": 598
         }
       ]
     },
@@ -101,29 +128,41 @@
           "id": "km-rump",
           "name": "Rump steak",
           "unit": "kg",
-          "price": 189,
-          "category": "Beef"
+          "category": "Beef",
+          "image": "https://images.unsplash.com/photo-1603048297172-c92544798d5a?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Rump steak",
+          "priceExVat": 189,
+          "priceInclVat": 217.35
         },
         {
           "id": "km-lamb",
           "name": "Lamb loin chops",
           "unit": "kg",
-          "price": 265,
-          "category": "Lamb"
+          "category": "Lamb",
+          "image": "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Lamb loin chops",
+          "priceExVat": 265,
+          "priceInclVat": 304.75
         },
         {
           "id": "km-mince",
           "name": "Lean beef mince",
           "unit": "kg",
-          "price": 98,
-          "category": "Beef"
+          "category": "Beef",
+          "image": "https://images.unsplash.com/photo-1602478067153-9b16a5b8f0d0?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Lean beef mince",
+          "priceExVat": 98,
+          "priceInclVat": 112.7
         },
         {
           "id": "km-boerewors",
           "name": "Traditional boerewors",
           "unit": "kg",
-          "price": 115,
-          "category": "Sausage"
+          "category": "Sausage",
+          "image": "https://images.unsplash.com/photo-1529694157872-4e0c0f3b238b?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Traditional boerewors",
+          "priceExVat": 115,
+          "priceInclVat": 132.25
         }
       ]
     },
@@ -141,29 +180,41 @@
           "id": "ph-olive",
           "name": "Extra virgin olive oil",
           "unit": "5L",
-          "price": 420,
-          "category": "Oils"
+          "category": "Oils",
+          "image": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Extra virgin olive oil",
+          "priceExVat": 420,
+          "priceInclVat": 483
         },
         {
           "id": "ph-rice",
           "name": "Basmati rice",
           "unit": "10kg",
-          "price": 285,
-          "category": "Grains"
+          "category": "Grains",
+          "image": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Basmati rice",
+          "priceExVat": 285,
+          "priceInclVat": 327.75
         },
         {
           "id": "ph-flour",
           "name": "Cake flour",
           "unit": "12.5kg",
-          "price": 145,
-          "category": "Baking"
+          "category": "Baking",
+          "image": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Cake flour",
+          "priceExVat": 145,
+          "priceInclVat": 166.75
         },
         {
           "id": "ph-salt",
           "name": "Fine sea salt",
           "unit": "5kg",
-          "price": 78,
-          "category": "Seasoning"
+          "category": "Seasoning",
+          "image": "https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=800&q=80",
+          "imageAlt": "Fine sea salt",
+          "priceExVat": 78,
+          "priceInclVat": 89.7
         }
       ]
     }

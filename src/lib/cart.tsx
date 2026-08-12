@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { roundMoney, vatAmount } from "@/lib/format";
 
 export type CartLine = {
   supplierId: string;
@@ -16,7 +17,10 @@ export type CartLine = {
   productId: string;
   name: string;
   unit: string;
-  price: number;
+  image: string;
+  imageAlt: string;
+  priceExVat: number;
+  priceInclVat: number;
   quantity: number;
 };
 
@@ -26,14 +30,19 @@ type AddItemInput = {
   productId: string;
   name: string;
   unit: string;
-  price: number;
+  image: string;
+  imageAlt: string;
+  priceExVat: number;
+  priceInclVat: number;
   quantity?: number;
 };
 
 type CartContextValue = {
   lines: CartLine[];
   itemCount: number;
-  subtotal: number;
+  subtotalExVat: number;
+  vatTotal: number;
+  totalInclVat: number;
   ready: boolean;
   addItem: (input: AddItemInput) => void;
   setQuantity: (
@@ -45,7 +54,7 @@ type CartContextValue = {
   clear: () => void;
 };
 
-const STORAGE_KEY = "fieldworx-order-draft-v2";
+const STORAGE_KEY = "fieldworx-order-draft-v3";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -58,15 +67,30 @@ function normalizeLines(raw: unknown): CartLine[] {
   return raw
     .map((item) => {
       if (!item || typeof item !== "object") return null;
-      const line = item as Partial<CartLine>;
+      const line = item as Partial<CartLine> & { price?: number };
       if (
         typeof line.supplierId !== "string" ||
         typeof line.productId !== "string" ||
-        typeof line.name !== "string" ||
-        typeof line.price !== "number"
+        typeof line.name !== "string"
       ) {
         return null;
       }
+
+      const priceExVat =
+        typeof line.priceExVat === "number"
+          ? line.priceExVat
+          : typeof line.price === "number"
+            ? line.price
+            : null;
+      const priceInclVat =
+        typeof line.priceInclVat === "number"
+          ? line.priceInclVat
+          : priceExVat != null
+            ? roundMoney(priceExVat * 1.15)
+            : null;
+
+      if (priceExVat == null || priceInclVat == null) return null;
+
       return {
         supplierId: line.supplierId,
         supplierName:
@@ -74,7 +98,11 @@ function normalizeLines(raw: unknown): CartLine[] {
         productId: line.productId,
         name: line.name,
         unit: typeof line.unit === "string" ? line.unit : "",
-        price: line.price,
+        image: typeof line.image === "string" ? line.image : "",
+        imageAlt:
+          typeof line.imageAlt === "string" ? line.imageAlt : line.name,
+        priceExVat,
+        priceInclVat,
         quantity:
           typeof line.quantity === "number" && line.quantity > 0
             ? line.quantity
@@ -129,7 +157,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           productId: input.productId,
           name: input.name,
           unit: input.unit,
-          price: input.price,
+          image: input.image,
+          imageAlt: input.imageAlt,
+          priceExVat: input.priceExVat,
+          priceInclVat: input.priceInclVat,
           quantity,
         },
       ];
@@ -169,37 +200,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setLines([]), []);
 
-  const { itemCount, subtotal } = useMemo(() => {
+  const totals = useMemo(() => {
     let count = 0;
-    let total = 0;
+    let subtotalExVat = 0;
+    let totalInclVat = 0;
     for (const line of lines) {
       count += line.quantity;
-      total += line.price * line.quantity;
+      subtotalExVat += line.priceExVat * line.quantity;
+      totalInclVat += line.priceInclVat * line.quantity;
     }
-    return { itemCount: count, subtotal: total };
+    subtotalExVat = roundMoney(subtotalExVat);
+    totalInclVat = roundMoney(totalInclVat);
+    return {
+      itemCount: count,
+      subtotalExVat,
+      vatTotal: vatAmount(subtotalExVat, totalInclVat),
+      totalInclVat,
+    };
   }, [lines]);
 
   const value = useMemo(
     () => ({
       lines,
-      itemCount,
-      subtotal,
+      ...totals,
       ready,
       addItem,
       setQuantity,
       removeItem,
       clear,
     }),
-    [
-      lines,
-      itemCount,
-      subtotal,
-      ready,
-      addItem,
-      setQuantity,
-      removeItem,
-      clear,
-    ],
+    [lines, totals, ready, addItem, setQuantity, removeItem, clear],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

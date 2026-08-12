@@ -3,14 +3,18 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, Supplier } from "@/data/types";
+import { priceExFromIncl, priceInclFromEx } from "@/lib/format";
 
 type ProductDraft = {
   key: string;
   id?: string;
   name: string;
   unit: string;
-  price: string;
   category: string;
+  image: string;
+  imageAlt: string;
+  priceExVat: string;
+  priceInclVat: string;
 };
 
 type SupplierFormProps = {
@@ -24,8 +28,11 @@ function toDrafts(products: Product[] = []): ProductDraft[] {
     id: product.id,
     name: product.name,
     unit: product.unit,
-    price: String(product.price),
     category: product.category,
+    image: product.image,
+    imageAlt: product.imageAlt,
+    priceExVat: String(product.priceExVat),
+    priceInclVat: String(product.priceInclVat),
   }));
 }
 
@@ -34,8 +41,11 @@ function emptyProduct(): ProductDraft {
     key: `new-${Math.random().toString(36).slice(2, 9)}`,
     name: "",
     unit: "",
-    price: "",
     category: "",
+    image: "",
+    imageAlt: "",
+    priceExVat: "",
+    priceInclVat: "",
   };
 }
 
@@ -58,7 +68,8 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
   const [deleting, setDeleting] = useState(false);
 
   const title = useMemo(
-    () => (mode === "create" ? "Add supplier" : `Edit ${initial?.name ?? "supplier"}`),
+    () =>
+      mode === "create" ? "Add supplier" : `Edit ${initial?.name ?? "supplier"}`,
     [mode, initial?.name],
   );
 
@@ -67,6 +78,27 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
       current.map((product) =>
         product.key === key ? { ...product, ...patch } : product,
       ),
+    );
+  }
+
+  function updatePrice(
+    key: string,
+    field: "priceExVat" | "priceInclVat",
+    value: string,
+  ) {
+    setProducts((current) =>
+      current.map((product) => {
+        if (product.key !== key) return product;
+        const next = { ...product, [field]: value };
+        const amount = Number(value);
+        if (!Number.isFinite(amount) || value.trim() === "") return next;
+        if (field === "priceExVat") {
+          next.priceInclVat = String(priceInclFromEx(amount));
+        } else {
+          next.priceExVat = String(priceExFromIncl(amount));
+        }
+        return next;
+      }),
     );
   }
 
@@ -96,8 +128,11 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
           id: product.id,
           name: product.name,
           unit: product.unit,
-          price: Number(product.price),
           category: product.category,
+          image: product.image,
+          imageAlt: product.imageAlt || product.name,
+          priceExVat: Number(product.priceExVat),
+          priceInclVat: Number(product.priceInclVat),
         })),
     };
 
@@ -253,11 +288,19 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
 
       <section className="admin-panel">
         <div className="admin-panel-heading">
-          <h2>Products</h2>
+          <div>
+            <h2>Products</h2>
+            <p className="muted small">
+              Enter either VAT price and the other fills in at 15%. You can still
+              edit both before saving.
+            </p>
+          </div>
           <button
             type="button"
             className="btn btn-ghost"
-            onClick={() => setProducts((current) => [...current, emptyProduct()])}
+            onClick={() =>
+              setProducts((current) => [...current, emptyProduct()])
+            }
           >
             Add product
           </button>
@@ -265,58 +308,115 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
 
         <div className="admin-product-list">
           {products.map((product, index) => (
-            <div className="admin-product-row" key={product.key}>
-              <p className="admin-product-index">#{index + 1}</p>
-              <label>
-                Name
-                <input
-                  value={product.name}
-                  onChange={(e) =>
-                    updateProduct(product.key, { name: e.target.value })
-                  }
-                  placeholder="Roma tomatoes"
-                />
-              </label>
-              <label>
-                Category
-                <input
-                  value={product.category}
-                  onChange={(e) =>
-                    updateProduct(product.key, { category: e.target.value })
-                  }
-                  placeholder="Vegetables"
-                />
-              </label>
-              <label>
-                Unit
-                <input
-                  value={product.unit}
-                  onChange={(e) =>
-                    updateProduct(product.key, { unit: e.target.value })
-                  }
-                  placeholder="kg"
-                />
-              </label>
-              <label>
-                Price (ZAR)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={product.price}
-                  onChange={(e) =>
-                    updateProduct(product.key, { price: e.target.value })
-                  }
-                  placeholder="28.50"
-                />
-              </label>
-              <button
-                type="button"
-                className="text-btn"
-                onClick={() => removeProduct(product.key)}
-              >
-                Remove
-              </button>
+            <div className="admin-product-card" key={product.key}>
+              <div className="admin-product-card-top">
+                <p className="admin-product-index">Product #{index + 1}</p>
+                <button
+                  type="button"
+                  className="text-btn"
+                  onClick={() => removeProduct(product.key)}
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div className="admin-product-layout">
+                <div className="admin-product-preview">
+                  {product.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={product.image} alt={product.imageAlt || product.name || "Product"} />
+                  ) : (
+                    <div className="admin-product-preview-empty">No image</div>
+                  )}
+                </div>
+
+                <div className="admin-product-fields">
+                  <label>
+                    Name
+                    <input
+                      value={product.name}
+                      onChange={(e) =>
+                        updateProduct(product.key, { name: e.target.value })
+                      }
+                      placeholder="Roma tomatoes"
+                    />
+                  </label>
+                  <label>
+                    Category
+                    <input
+                      value={product.category}
+                      onChange={(e) =>
+                        updateProduct(product.key, {
+                          category: e.target.value,
+                        })
+                      }
+                      placeholder="Vegetables"
+                    />
+                  </label>
+                  <label>
+                    Unit
+                    <input
+                      value={product.unit}
+                      onChange={(e) =>
+                        updateProduct(product.key, { unit: e.target.value })
+                      }
+                      placeholder="kg"
+                    />
+                  </label>
+                  <label>
+                    Price excl. VAT (ZAR)
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={product.priceExVat}
+                      onChange={(e) =>
+                        updatePrice(product.key, "priceExVat", e.target.value)
+                      }
+                      placeholder="28.50"
+                    />
+                  </label>
+                  <label>
+                    Price incl. VAT (ZAR)
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={product.priceInclVat}
+                      onChange={(e) =>
+                        updatePrice(
+                          product.key,
+                          "priceInclVat",
+                          e.target.value,
+                        )
+                      }
+                      placeholder="32.78"
+                    />
+                  </label>
+                  <label className="span-2">
+                    Product image URL
+                    <input
+                      value={product.image}
+                      onChange={(e) =>
+                        updateProduct(product.key, { image: e.target.value })
+                      }
+                      placeholder="https://..."
+                    />
+                  </label>
+                  <label className="span-2">
+                    Image description
+                    <input
+                      value={product.imageAlt}
+                      onChange={(e) =>
+                        updateProduct(product.key, {
+                          imageAlt: e.target.value,
+                        })
+                      }
+                      placeholder="Roma tomatoes in a crate"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
           ))}
         </div>

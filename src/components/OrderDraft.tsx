@@ -6,7 +6,16 @@ import { useCart } from "@/lib/cart";
 import { formatZar } from "@/lib/format";
 
 export function OrderDraft() {
-  const { lines, subtotal, setQuantity, removeItem, clear, ready } = useCart();
+  const {
+    lines,
+    subtotalExVat,
+    vatTotal,
+    totalInclVat,
+    setQuantity,
+    removeItem,
+    clear,
+    ready,
+  } = useCart();
   const [submitted, setSubmitted] = useState(false);
 
   if (!ready) {
@@ -68,10 +77,19 @@ export function OrderDraft() {
             {group.lines.map((line) => (
               <li key={`${line.supplierId}-${line.productId}`}>
                 <div className="order-line-main">
-                  <p className="order-line-name">{line.name}</p>
-                  <p className="muted">
-                    {formatZar(line.price)} / {line.unit}
-                  </p>
+                  <div className="order-line-media">
+                    {line.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={line.image} alt={line.imageAlt || line.name} />
+                    ) : null}
+                    <div>
+                      <p className="order-line-name">{line.name}</p>
+                      <p className="muted">
+                        {formatZar(line.priceExVat)} excl /{" "}
+                        {formatZar(line.priceInclVat)} incl · {line.unit}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="order-line-actions">
                   <label className="sr-only" htmlFor={`line-${line.productId}`}>
@@ -91,9 +109,12 @@ export function OrderDraft() {
                       )
                     }
                   />
-                  <p className="order-line-total">
-                    {formatZar(line.price * line.quantity)}
-                  </p>
+                  <div className="order-line-total">
+                    <p>{formatZar(line.priceExVat * line.quantity)} excl</p>
+                    <p className="muted small">
+                      {formatZar(line.priceInclVat * line.quantity)} incl
+                    </p>
+                  </div>
                   <button
                     type="button"
                     className="text-btn"
@@ -112,8 +133,16 @@ export function OrderDraft() {
 
       <div className="order-summary">
         <div className="order-summary-row">
-          <span>Subtotal</span>
-          <strong>{formatZar(subtotal)}</strong>
+          <span>Subtotal excl. VAT</span>
+          <strong>{formatZar(subtotalExVat)}</strong>
+        </div>
+        <div className="order-summary-row muted">
+          <span>VAT</span>
+          <span>{formatZar(vatTotal)}</span>
+        </div>
+        <div className="order-summary-row order-summary-total">
+          <span>Total incl. VAT</span>
+          <strong>{formatZar(totalInclVat)}</strong>
         </div>
         <p className="muted small">
           Delivery fees and supplier cut-offs would be confirmed before placing

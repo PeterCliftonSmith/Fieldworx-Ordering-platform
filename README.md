@@ -35,3 +35,5 @@ Catalogue data is stored in `data/catalog.json`. The customer-facing pages read 
 - Sample South African trade catalogue (ZAR)
 
 This is still a demo scaffold — orders stay in the browser, and admin auth is a simple shared password meant for local/trusted use.
+
+Product prices are stored excluding and including VAT (default 15%). In admin, editing one amount auto-fills the other.
