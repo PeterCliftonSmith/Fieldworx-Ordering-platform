@@ -17,9 +17,10 @@ type ProductCatalogueItemProps = {
   unit: string;
   image: string;
   imageAlt: string;
-  priceExVat: number;
-  priceInclVat: number;
+  priceExVat: number | null;
+  priceInclVat: number | null;
   variations: ProductVariation[];
+  showPrices: boolean;
 };
 
 export function ProductCatalogueItem({
@@ -34,6 +35,7 @@ export function ProductCatalogueItem({
   priceExVat,
   priceInclVat,
   variations,
+  showPrices,
 }: ProductCatalogueItemProps) {
   const hasVariations = variations.length > 0;
   const [variationId, setVariationId] = useState(
@@ -49,9 +51,6 @@ export function ProductCatalogueItem({
   const displayImageAlt = selected?.imageAlt || imageAlt || productName;
   const displayPriceEx = selected?.priceExVat ?? priceExVat;
   const displayPriceIncl = selected?.priceInclVat ?? priceInclVat;
-  const fromPriceEx = hasVariations
-    ? Math.min(...variations.map((variation) => variation.priceExVat))
-    : priceExVat;
 
   return (
     <article className="product-row">
@@ -70,14 +69,7 @@ export function ProductCatalogueItem({
             ? ` · ${variations.length} varieties`
             : ` · ${unit}`}
         </p>
-        {hasVariations && !selected ? (
-          <div className="product-prices">
-            <p>
-              <strong>From {formatZar(fromPriceEx)}</strong>
-              <span className="muted"> excl. VAT</span>
-            </p>
-          </div>
-        ) : (
+        {showPrices && displayPriceEx != null && displayPriceIncl != null ? (
           <div className="product-prices">
             <p>
               <strong>{formatZar(displayPriceEx)}</strong>
@@ -85,6 +77,13 @@ export function ProductCatalogueItem({
             </p>
             <p className="muted small">
               {formatZar(displayPriceIncl)} incl. VAT · {displayUnit}
+            </p>
+          </div>
+        ) : (
+          <div className="product-prices">
+            <p className="muted small product-price-hidden">
+              Sign in to view price
+              {hasVariations ? "" : ` · ${displayUnit}`}
             </p>
           </div>
         )}
@@ -97,11 +96,12 @@ export function ProductCatalogueItem({
         unit={displayUnit}
         image={displayImage}
         imageAlt={displayImageAlt}
-        priceExVat={displayPriceEx}
-        priceInclVat={displayPriceIncl}
+        priceExVat={displayPriceEx ?? 0}
+        priceInclVat={displayPriceIncl ?? 0}
         variations={variations}
         variationId={variationId}
         onVariationChange={setVariationId}
+        showPrices={showPrices}
       />
     </article>
   );
@@ -120,6 +120,7 @@ type AddToOrderProps = {
   variations?: ProductVariation[];
   variationId?: string;
   onVariationChange?: (variationId: string) => void;
+  showPrices?: boolean;
 };
 
 export function AddToOrder({
@@ -135,6 +136,7 @@ export function AddToOrder({
   variations = [],
   variationId = "",
   onVariationChange,
+  showPrices = false,
 }: AddToOrderProps) {
   const { customer, ready } = useCustomerAuth();
   const { addItem } = useCart();
@@ -144,8 +146,9 @@ export function AddToOrder({
 
   const hasVariations = variations.length > 0;
   const selected = variations.find((variation) => variation.id === variationId);
+  const canOrder = Boolean(customer) && showPrices;
 
-  if (ready && !customer) {
+  if (ready && !canOrder) {
     return (
       <div className="add-to-order-locked">
         <Link
@@ -196,14 +199,19 @@ export function AddToOrder({
           >
             {variations.map((variation) => (
               <option key={variation.id} value={variation.id}>
-                {variation.name} · {variation.unit} ·{" "}
-                {formatZar(variation.priceExVat)} excl
+                {variation.name} · {variation.unit}
+                {showPrices
+                  ? ` · ${formatZar(variation.priceExVat)} excl`
+                  : ""}
               </option>
             ))}
           </select>
         </label>
       ) : null}
-      <label className="qty-label" htmlFor={`qty-${productId}-${variationId || "base"}`}>
+      <label
+        className="qty-label"
+        htmlFor={`qty-${productId}-${variationId || "base"}`}
+      >
         Qty
         <input
           id={`qty-${productId}-${variationId || "base"}`}
@@ -221,7 +229,7 @@ export function AddToOrder({
         type="button"
         className={`btn btn-primary ${justAdded ? "btn-pulse" : ""}`}
         onClick={handleAdd}
-        disabled={!ready || (hasVariations && !selected)}
+        disabled={!ready || !canOrder || (hasVariations && !selected)}
       >
         {justAdded ? "Added" : "Add to order"}
       </button>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ProductCatalogueItem } from "@/components/AddToOrder";
 import { SupplierImage } from "@/components/SupplierImage";
 import { getSupplier } from "@/lib/catalog-store";
+import { getCurrentCustomer } from "@/lib/customer/session";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,13 @@ export async function generateMetadata({
 
 export default async function SupplierDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const supplier = await getSupplier(id);
+  const [supplier, customer] = await Promise.all([
+    getSupplier(id),
+    getCurrentCustomer(),
+  ]);
   if (!supplier) notFound();
+
+  const showPrices = Boolean(customer);
 
   return (
     <div className="page-shell">
@@ -52,6 +58,17 @@ export default async function SupplierDetailPage({ params }: PageProps) {
           </p>
           <p>{supplier.blurb}</p>
 
+          {!showPrices && supplier.products.length > 0 ? (
+            <p className="price-gate-note">
+              <Link
+                href={`/login?next=${encodeURIComponent(`/suppliers/${supplier.id}`)}`}
+              >
+                Sign in
+              </Link>{" "}
+              to view trade prices and place an order.
+            </p>
+          ) : null}
+
           {supplier.products.length === 0 ? (
             <p className="muted" style={{ marginTop: "1.5rem" }}>
               No products listed yet.
@@ -69,18 +86,36 @@ export default async function SupplierDetailPage({ params }: PageProps) {
                   unit={product.unit}
                   image={product.image}
                   imageAlt={product.imageAlt || product.name}
-                  priceExVat={product.priceExVat}
-                  priceInclVat={product.priceInclVat}
-                  variations={product.variations ?? []}
+                  priceExVat={showPrices ? product.priceExVat : null}
+                  priceInclVat={showPrices ? product.priceInclVat : null}
+                  variations={
+                    showPrices
+                      ? (product.variations ?? [])
+                      : (product.variations ?? []).map((variation) => ({
+                          ...variation,
+                          priceExVat: 0,
+                          priceInclVat: 0,
+                        }))
+                  }
+                  showPrices={showPrices}
                 />
               ))}
             </div>
           )}
 
           <p style={{ marginTop: "1.5rem" }}>
-            <Link href="/order" className="btn btn-primary">
-              Review order
-            </Link>
+            {showPrices ? (
+              <Link href="/order" className="btn btn-primary">
+                Review order
+              </Link>
+            ) : (
+              <Link
+                href={`/login?next=${encodeURIComponent(`/suppliers/${supplier.id}`)}`}
+                className="btn btn-primary"
+              >
+                Sign in to view prices
+              </Link>
+            )}
           </p>
         </div>
       </div>

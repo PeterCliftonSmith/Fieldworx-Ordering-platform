@@ -551,6 +551,28 @@ img {
   margin: 0;
 }
 
+.product-price-hidden {
+  font-style: italic;
+}
+
+.price-gate-note {
+  margin: 1.25rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--field);
+  background: color-mix(in srgb, var(--field) 6%, white);
+  color: var(--ink-soft);
+}
+
+.price-gate-note a {
+  color: var(--field);
+  font-weight: 600;
+}
+
+.price-gate-note a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .product-table {
   width: 100%;
   margin-top: 1.75rem;
