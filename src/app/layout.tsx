@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Fraunces, Sora } from "next/font/google";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { CartProvider } from "@/lib/cart";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -34,11 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en-ZA">
       <body className={`${fraunces.variable} ${sora.variable} antialiased`}>
-        <CartProvider>
-          <SiteHeader />
-          <main>{children}</main>
-          <SiteFooter />
-        </CartProvider>
+        {children}
       </body>
     </html>
   );

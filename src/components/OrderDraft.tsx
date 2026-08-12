@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { getProduct } from "@/data/catalog";
 import { useCart } from "@/lib/cart";
 import { formatZar } from "@/lib/format";
 
@@ -47,14 +46,12 @@ export function OrderDraft() {
   >();
 
   for (const line of lines) {
-    const match = getProduct(line.supplierId, line.productId);
-    if (!match) continue;
     const existing = bySupplier.get(line.supplierId);
     if (existing) {
       existing.lines.push(line);
     } else {
       bySupplier.set(line.supplierId, {
-        supplierName: match.supplier.name,
+        supplierName: line.supplierName,
         lines: [line],
       });
     }
@@ -68,52 +65,47 @@ export function OrderDraft() {
             <Link href={`/suppliers/${supplierId}`}>{group.supplierName}</Link>
           </h2>
           <ul className="order-lines">
-            {group.lines.map((line) => {
-              const match = getProduct(line.supplierId, line.productId);
-              if (!match) return null;
-              const { product } = match;
-              return (
-                <li key={`${line.supplierId}-${line.productId}`}>
-                  <div className="order-line-main">
-                    <p className="order-line-name">{product.name}</p>
-                    <p className="muted">
-                      {formatZar(product.price)} / {product.unit}
-                    </p>
-                  </div>
-                  <div className="order-line-actions">
-                    <label className="sr-only" htmlFor={`line-${product.id}`}>
-                      Quantity for {product.name}
-                    </label>
-                    <input
-                      id={`line-${product.id}`}
-                      className="qty-input"
-                      type="number"
-                      min={1}
-                      value={line.quantity}
-                      onChange={(e) =>
-                        setQuantity(
-                          line.supplierId,
-                          line.productId,
-                          Math.max(1, Number(e.target.value) || 1),
-                        )
-                      }
-                    />
-                    <p className="order-line-total">
-                      {formatZar(product.price * line.quantity)}
-                    </p>
-                    <button
-                      type="button"
-                      className="text-btn"
-                      onClick={() =>
-                        removeItem(line.supplierId, line.productId)
-                      }
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
+            {group.lines.map((line) => (
+              <li key={`${line.supplierId}-${line.productId}`}>
+                <div className="order-line-main">
+                  <p className="order-line-name">{line.name}</p>
+                  <p className="muted">
+                    {formatZar(line.price)} / {line.unit}
+                  </p>
+                </div>
+                <div className="order-line-actions">
+                  <label className="sr-only" htmlFor={`line-${line.productId}`}>
+                    Quantity for {line.name}
+                  </label>
+                  <input
+                    id={`line-${line.productId}`}
+                    className="qty-input"
+                    type="number"
+                    min={1}
+                    value={line.quantity}
+                    onChange={(e) =>
+                      setQuantity(
+                        line.supplierId,
+                        line.productId,
+                        Math.max(1, Number(e.target.value) || 1),
+                      )
+                    }
+                  />
+                  <p className="order-line-total">
+                    {formatZar(line.price * line.quantity)}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-btn"
+                    onClick={() =>
+                      removeItem(line.supplierId, line.productId)
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       ))}

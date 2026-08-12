@@ -5,21 +5,35 @@ import { useCart } from "@/lib/cart";
 
 type AddToOrderProps = {
   supplierId: string;
+  supplierName: string;
   productId: string;
   productName: string;
+  unit: string;
+  price: number;
 };
 
 export function AddToOrder({
   supplierId,
+  supplierName,
   productId,
   productName,
+  unit,
+  price,
 }: AddToOrderProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
 
   function handleAdd() {
-    addItem(supplierId, productId, quantity);
+    addItem({
+      supplierId,
+      supplierName,
+      productId,
+      name: productName,
+      unit,
+      price,
+      quantity,
+    });
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1400);
   }

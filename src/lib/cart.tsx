@@ -9,12 +9,25 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getProduct } from "@/data/catalog";
 
 export type CartLine = {
   supplierId: string;
+  supplierName: string;
   productId: string;
+  name: string;
+  unit: string;
+  price: number;
   quantity: number;
+};
+
+type AddItemInput = {
+  supplierId: string;
+  supplierName: string;
+  productId: string;
+  name: string;
+  unit: string;
+  price: number;
+  quantity?: number;
 };
 
 type CartContextValue = {
@@ -22,7 +35,7 @@ type CartContextValue = {
   itemCount: number;
   subtotal: number;
   ready: boolean;
-  addItem: (supplierId: string, productId: string, quantity?: number) => void;
+  addItem: (input: AddItemInput) => void;
   setQuantity: (
     supplierId: string,
     productId: string,
@@ -32,12 +45,43 @@ type CartContextValue = {
   clear: () => void;
 };
 
-const STORAGE_KEY = "fieldworx-order-draft";
+const STORAGE_KEY = "fieldworx-order-draft-v2";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 function lineKey(supplierId: string, productId: string) {
   return `${supplierId}:${productId}`;
+}
+
+function normalizeLines(raw: unknown): CartLine[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const line = item as Partial<CartLine>;
+      if (
+        typeof line.supplierId !== "string" ||
+        typeof line.productId !== "string" ||
+        typeof line.name !== "string" ||
+        typeof line.price !== "number"
+      ) {
+        return null;
+      }
+      return {
+        supplierId: line.supplierId,
+        supplierName:
+          typeof line.supplierName === "string" ? line.supplierName : "Supplier",
+        productId: line.productId,
+        name: line.name,
+        unit: typeof line.unit === "string" ? line.unit : "",
+        price: line.price,
+        quantity:
+          typeof line.quantity === "number" && line.quantity > 0
+            ? line.quantity
+            : 1,
+      } satisfies CartLine;
+    })
+    .filter((line): line is CartLine => Boolean(line));
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -47,10 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as CartLine[];
-        if (Array.isArray(parsed)) setLines(parsed);
-      }
+      if (raw) setLines(normalizeLines(JSON.parse(raw)));
     } catch {
       // Ignore corrupt drafts
     }
@@ -62,25 +103,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
   }, [lines, ready]);
 
-  const addItem = useCallback(
-    (supplierId: string, productId: string, quantity = 1) => {
-      setLines((current) => {
-        const key = lineKey(supplierId, productId);
-        const existing = current.find(
-          (line) => lineKey(line.supplierId, line.productId) === key,
+  const addItem = useCallback((input: AddItemInput) => {
+    const quantity = input.quantity ?? 1;
+    setLines((current) => {
+      const key = lineKey(input.supplierId, input.productId);
+      const existing = current.find(
+        (line) => lineKey(line.supplierId, line.productId) === key,
+      );
+      if (existing) {
+        return current.map((line) =>
+          lineKey(line.supplierId, line.productId) === key
+            ? {
+                ...line,
+                ...input,
+                quantity: line.quantity + quantity,
+              }
+            : line,
         );
-        if (existing) {
-          return current.map((line) =>
-            lineKey(line.supplierId, line.productId) === key
-              ? { ...line, quantity: line.quantity + quantity }
-              : line,
-          );
-        }
-        return [...current, { supplierId, productId, quantity }];
-      });
-    },
-    [],
-  );
+      }
+      return [
+        ...current,
+        {
+          supplierId: input.supplierId,
+          supplierName: input.supplierName,
+          productId: input.productId,
+          name: input.name,
+          unit: input.unit,
+          price: input.price,
+          quantity,
+        },
+      ];
+    });
+  }, []);
 
   const setQuantity = useCallback(
     (supplierId: string, productId: string, quantity: number) => {
@@ -120,8 +174,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     let total = 0;
     for (const line of lines) {
       count += line.quantity;
-      const match = getProduct(line.supplierId, line.productId);
-      if (match) total += match.product.price * line.quantity;
+      total += line.price * line.quantity;
     }
     return { itemCount: count, subtotal: total };
   }, [lines]);

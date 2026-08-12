@@ -1,9 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MotionReveal } from "@/components/MotionReveal";
-import { suppliers } from "@/data/catalog";
+import { SupplierImage } from "@/components/SupplierImage";
+import { listSuppliers } from "@/lib/catalog-store";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const suppliers = await listSuppliers();
+
   return (
     <>
       <section className="hero" aria-label="Fieldworx introduction">
@@ -53,11 +58,9 @@ export default function HomePage() {
               <MotionReveal key={supplier.id} delayMs={index * 90}>
                 <article className="supplier-row">
                   <div className="supplier-image">
-                    <Image
+                    <SupplierImage
                       src={supplier.image}
                       alt={supplier.imageAlt}
-                      fill
-                      sizes="(max-width: 860px) 100vw, 55vw"
                     />
                   </div>
                   <div className="supplier-copy">
