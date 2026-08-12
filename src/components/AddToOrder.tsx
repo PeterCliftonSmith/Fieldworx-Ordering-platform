@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { useCustomerAuth } from "@/lib/customer/auth-context";
 import { useCart } from "@/lib/cart";
 
 type AddToOrderProps = {
@@ -26,9 +28,23 @@ export function AddToOrder({
   priceExVat,
   priceInclVat,
 }: AddToOrderProps) {
+  const { customer, ready } = useCustomerAuth();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
+
+  if (ready && !customer) {
+    return (
+      <div className="add-to-order-locked">
+        <Link
+          href={`/login?next=${encodeURIComponent(`/suppliers/${supplierId}`)}`}
+          className="btn btn-primary"
+        >
+          Sign in to order
+        </Link>
+      </div>
+    );
+  }
 
   function handleAdd() {
     addItem({
@@ -67,6 +83,7 @@ export function AddToOrder({
         type="button"
         className={`btn btn-primary ${justAdded ? "btn-pulse" : ""}`}
         onClick={handleAdd}
+        disabled={!ready}
       >
         {justAdded ? "Added" : "Add to order"}
       </button>

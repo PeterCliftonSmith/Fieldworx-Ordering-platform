@@ -12,8 +12,8 @@ export default function OrderPage() {
       <header className="page-intro">
         <h1>Your order</h1>
         <p>
-          Review quantities across suppliers, then submit a draft. This first
-          version stores your draft in this browser only.
+          You are signed in. Review quantities across suppliers, then submit a
+          draft order for Fieldworx to route.
         </p>
       </header>
       <OrderDraft />

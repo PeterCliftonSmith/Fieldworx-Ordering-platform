@@ -1305,6 +1305,66 @@ img {
   border-bottom: 1px solid var(--line);
 }
 
+.auth-form {
+  max-width: 28rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.nav-user {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--field);
+}
+
+.nav-button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.add-to-order-locked {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  color: var(--accent-deep);
+  background: color-mix(in srgb, var(--accent) 14%, white);
+}
+
+.status-approved {
+  color: var(--field);
+  background: color-mix(in srgb, var(--leaf) 14%, white);
+}
+
+.status-rejected {
+  color: #8a2f1f;
+  background: color-mix(in srgb, #8a2f1f 10%, white);
+}
+
+.admin-registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
 @media (max-width: 900px) {
   .admin-grid,
   .admin-product-row,

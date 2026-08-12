@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/admin/auth";
 import {
   createRegistration,
   readRegistrations,
+  sanitizeRegistrationForAdmin,
+  toPublicCustomer,
 } from "@/lib/registration-store";
 
 export async function GET() {
@@ -14,14 +16,27 @@ export async function GET() {
   }
 
   const registrations = await readRegistrations();
-  return NextResponse.json({ registrations });
+  return NextResponse.json({
+    registrations: registrations.map(sanitizeRegistrationForAdmin),
+  });
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as CustomerRegistrationInput;
     const registration = await createRegistration(body);
-    return NextResponse.json({ registration }, { status: 201 });
+    return NextResponse.json(
+      {
+        registration: {
+          id: registration.id,
+          status: registration.status,
+          username: registration.username,
+          tradingName: registration.tradingName,
+        },
+        customer: toPublicCustomer(registration),
+      },
+      { status: 201 },
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Could not submit registration.";

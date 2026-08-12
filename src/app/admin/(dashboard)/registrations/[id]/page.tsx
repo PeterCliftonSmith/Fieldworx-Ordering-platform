@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdminRegistrationActions } from "@/components/admin/AdminRegistrationActions";
 import { WEEK_DAY_LABELS } from "@/data/registration";
 import { getRegistration } from "@/lib/registration-store";
 
@@ -50,9 +51,33 @@ export default async function AdminRegistrationDetailPage({
           <p className="muted">
             Submitted{" "}
             {new Date(registration.createdAt).toLocaleString("en-ZA")}
+            {registration.reviewedAt
+              ? ` · Reviewed ${new Date(registration.reviewedAt).toLocaleString("en-ZA")}`
+              : ""}
           </p>
         </div>
+        <span className={`status-pill status-${registration.status}`}>
+          {registration.status}
+        </span>
       </div>
+
+      <section className="admin-panel">
+        <h2>Account</h2>
+        <dl className="detail-list">
+          <div>
+            <dt>Username</dt>
+            <dd>{registration.username || "—"}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{registration.status}</dd>
+          </div>
+        </dl>
+        <AdminRegistrationActions
+          registrationId={registration.id}
+          status={registration.status}
+        />
+      </section>
 
       <section className="admin-panel">
         <h2>Business details</h2>

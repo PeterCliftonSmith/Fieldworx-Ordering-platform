@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   title: "Customer registrations",
 };
 
+function statusLabel(status: string) {
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending";
+}
+
 export default async function AdminRegistrationsPage() {
   const registrations = await readRegistrations();
 
@@ -18,7 +24,8 @@ export default async function AdminRegistrationsPage() {
           <p className="section-kicker">Customers</p>
           <h1>Registrations</h1>
           <p className="muted">
-            Restaurant applications submitted from the public registration page.
+            Review restaurant applications, then approve accounts so they can
+            sign in and place orders.
           </p>
         </div>
       </div>
@@ -37,8 +44,8 @@ export default async function AdminRegistrationsPage() {
             <thead>
               <tr>
                 <th>Business</th>
-                <th>Buyer</th>
-                <th>City</th>
+                <th>Username</th>
+                <th>Status</th>
                 <th>Submitted</th>
                 <th>
                   <span className="sr-only">Actions</span>
@@ -56,17 +63,18 @@ export default async function AdminRegistrationsPage() {
                       {registration.registeredBusinessName}
                     </p>
                   </td>
+                  <td>{registration.username || "—"}</td>
                   <td>
-                    <p className="admin-table-title">{registration.buyer.name}</p>
-                    <p className="muted small">{registration.buyer.email}</p>
+                    <span className={`status-pill status-${registration.status}`}>
+                      {statusLabel(registration.status)}
+                    </span>
                   </td>
-                  <td>{registration.deliveryAddress.city}</td>
                   <td>
                     {new Date(registration.createdAt).toLocaleString("en-ZA")}
                   </td>
                   <td className="admin-table-actions">
                     <Link href={`/admin/registrations/${registration.id}`}>
-                      View
+                      Review
                     </Link>
                   </td>
                 </tr>

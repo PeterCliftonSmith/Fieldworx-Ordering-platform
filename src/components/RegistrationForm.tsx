@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
 import {
   WEEK_DAYS,
   WEEK_DAY_LABELS,
@@ -20,6 +21,9 @@ function defaultTradingTimes(): DayTradingHours[] {
 }
 
 export function RegistrationForm() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [registeredBusinessName, setRegisteredBusinessName] = useState("");
   const [tradingName, setTradingName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
@@ -36,7 +40,9 @@ export function RegistrationForm() {
   const [tradingTimesNotes, setTradingTimesNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submittedUsername, setSubmittedUsername] = useState<string | null>(
+    null,
+  );
 
   const sameAsBuyerLabel = useMemo(
     () => "Use the same details as the buyer contact",
@@ -61,7 +67,15 @@ export function RegistrationForm() {
     setSaving(true);
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError("Password confirmation does not match.");
+      setSaving(false);
+      return;
+    }
+
     const payload: CustomerRegistrationInput = {
+      username,
+      password,
       registeredBusinessName,
       tradingName,
       vatNumber,
@@ -88,12 +102,14 @@ export function RegistrationForm() {
       });
       const data = (await response.json()) as {
         error?: string;
-        registration?: { id: string };
+        registration?: { id: string; username: string };
       };
       if (!response.ok) {
         throw new Error(data.error || "Could not submit registration.");
       }
-      setSubmittedId(data.registration?.id ?? "submitted");
+      setSubmittedUsername(
+        data.registration?.username ?? username.trim().toLowerCase(),
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not submit registration.",
@@ -103,15 +119,20 @@ export function RegistrationForm() {
     }
   }
 
-  if (submittedId) {
+  if (submittedUsername) {
     return (
       <div className="register-success">
-        <h2>Registration received</h2>
+        <h2>Registration submitted for approval</h2>
         <p>
-          Thanks — Fieldworx has your restaurant details. We’ll be in touch to
-          confirm your account before ordering goes live.
+          Thanks — Fieldworx has your restaurant details and login username{" "}
+          <strong>{submittedUsername}</strong>. You’ll be able to sign in and
+          place orders once an admin approves your registration.
         </p>
-        <p className="muted small">Reference: {submittedId}</p>
+        <p>
+          <Link href="/login" className="btn btn-primary">
+            Go to sign in
+          </Link>
+        </p>
       </div>
     );
   }
@@ -119,6 +140,48 @@ export function RegistrationForm() {
   return (
     <form className="register-form" onSubmit={onSubmit}>
       {error ? <p className="admin-error">{error}</p> : null}
+
+      <section className="register-panel">
+        <h2>Login details</h2>
+        <p className="muted small">
+          Choose a username and password for ordering once your account is
+          approved.
+        </p>
+        <div className="admin-grid">
+          <label>
+            Username
+            <input
+              required
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. cape.kitchen"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              required
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+          <label className="span-2">
+            Confirm password
+            <input
+              required
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </label>
+        </div>
+      </section>
 
       <section className="register-panel">
         <h2>Business details</h2>

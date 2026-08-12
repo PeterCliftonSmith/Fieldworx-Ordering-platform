@@ -11,13 +11,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the customer site.
 
-## Customer registration
+## Customer registration and login
 
-Restaurants can apply at [http://localhost:3000/register](http://localhost:3000/register).
+Restaurants register at [http://localhost:3000/register](http://localhost:3000/register), choosing a username and password plus business details.
 
-Collected details include registered and trading names, VAT and registration numbers, landline, buyer and accounts contacts, delivery address, and trading times.
+New accounts stay **pending** until approved in admin under **Registrations**. After approval, customers sign in at [http://localhost:3000/login](http://localhost:3000/login) to place orders.
 
-Submissions are stored in `data/registrations.json` and can be reviewed in admin under **Registrations**.
+Ordering (`/order` and add-to-order) requires a signed-in approved account.
+
+Submissions are stored in `data/registrations.json`.
 
 ## Admin catalogue
 

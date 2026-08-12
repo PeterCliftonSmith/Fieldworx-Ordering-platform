@@ -26,9 +26,15 @@ export type DayTradingHours = {
   close: string;
 };
 
+export type RegistrationStatus = "pending" | "approved" | "rejected";
+
 export type CustomerRegistration = {
   id: string;
   createdAt: string;
+  status: RegistrationStatus;
+  reviewedAt: string | null;
+  username: string;
+  passwordHash: string;
   registeredBusinessName: string;
   tradingName: string;
   vatNumber: string;
@@ -41,10 +47,28 @@ export type CustomerRegistration = {
   tradingTimesNotes: string;
 };
 
-export type CustomerRegistrationInput = Omit<
-  CustomerRegistration,
-  "id" | "createdAt"
->;
+export type CustomerRegistrationInput = {
+  username: string;
+  password: string;
+  registeredBusinessName: string;
+  tradingName: string;
+  vatNumber: string;
+  registrationNumber: string;
+  landlineNumber: string;
+  buyer: PersonContact;
+  accounts: PersonContact;
+  deliveryAddress: DeliveryAddress;
+  tradingTimes: DayTradingHours[];
+  tradingTimesNotes: string;
+};
+
+export type PublicCustomer = {
+  id: string;
+  username: string;
+  tradingName: string;
+  registeredBusinessName: string;
+  status: RegistrationStatus;
+};
 
 export type RegistrationsFile = {
   registrations: CustomerRegistration[];

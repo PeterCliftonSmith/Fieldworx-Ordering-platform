@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart";
+import { useCustomerAuth } from "@/lib/customer/auth-context";
 
 const links = [
   { href: "/suppliers", label: "Suppliers" },
@@ -13,7 +14,8 @@ const links = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { itemCount, ready } = useCart();
+  const { itemCount, ready: cartReady } = useCart();
+  const { customer, ready: authReady, logout } = useCustomerAuth();
 
   return (
     <header className="site-header">
@@ -32,7 +34,7 @@ export function SiteHeader() {
                 className={active ? "nav-link active" : "nav-link"}
               >
                 {link.label}
-                {link.href === "/order" && ready && itemCount > 0 ? (
+                {link.href === "/order" && cartReady && itemCount > 0 ? (
                   <span className="cart-count" aria-label={`${itemCount} items`}>
                     {itemCount}
                   </span>
@@ -40,6 +42,23 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          {authReady && customer ? (
+            <>
+              <span className="nav-user" title={customer.tradingName}>
+                {customer.username}
+              </span>
+              <button type="button" className="nav-link nav-button" onClick={logout}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className={pathname === "/login" ? "nav-link active" : "nav-link"}
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>

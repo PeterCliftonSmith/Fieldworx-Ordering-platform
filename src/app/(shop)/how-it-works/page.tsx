@@ -12,11 +12,11 @@ export const metadata: Metadata = {
 const steps = [
   {
     title: "Register your restaurant",
-    body: "Share your business, buyer, accounts, delivery, and trading details so Fieldworx can set you up.",
+    body: "Create a username and password, share your business details, and wait for Fieldworx approval before ordering.",
   },
   {
-    title: "Browse suppliers",
-    body: "Open catalogues from produce, seafood, meat, and pantry partners already on Fieldworx.",
+    title: "Sign in and browse suppliers",
+    body: "Once approved, sign in and open catalogues from produce, seafood, meat, and pantry partners on Fieldworx.",
   },
   {
     title: "Build one draft order",

@@ -4,7 +4,7 @@ import { RegistrationForm } from "@/components/RegistrationForm";
 export const metadata: Metadata = {
   title: "Register your restaurant",
   description:
-    "Register your restaurant with Fieldworx to order from suppliers through the platform.",
+    "Register your restaurant with Fieldworx, create a login, and wait for approval before ordering.",
 };
 
 export default function RegisterPage() {
@@ -13,8 +13,8 @@ export default function RegisterPage() {
       <header className="page-intro">
         <h1>Register your restaurant</h1>
         <p>
-          Tell us about your business so Fieldworx can set up ordering between
-          your kitchen and suppliers.
+          Create your login and share your business details. Fieldworx will
+          review the application before you can sign in and place orders.
         </p>
       </header>
       <RegistrationForm />
