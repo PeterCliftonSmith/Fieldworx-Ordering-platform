@@ -21,7 +21,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link href="/" className="brand-mark" aria-label="Fieldworx home">
+        <Link href="/" prefetch={false} className="brand-mark" aria-label="Fieldworx home">
           Fieldworx
         </Link>
         <nav className="site-nav" aria-label="Primary">
@@ -35,6 +35,7 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={false}
                 className={active ? "nav-link active" : "nav-link"}
               >
                 {link.label}
@@ -58,6 +59,7 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
+              prefetch={false}
               className={pathname === "/login" ? "nav-link active" : "nav-link"}
             >
               Sign in

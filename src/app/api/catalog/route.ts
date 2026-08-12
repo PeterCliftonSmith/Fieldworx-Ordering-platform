@@ -5,6 +5,10 @@ import {
   redactSupplierPrices,
 } from "@/lib/catalog-pricing";
 import { getCurrentCustomer } from "@/lib/customer/session";
+import { jsonNoStore } from "@/lib/http";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,16 +19,16 @@ export async function GET(request: Request) {
   if (id) {
     const supplier = await getSupplier(id);
     if (!supplier) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return jsonNoStore({ error: "Not found" }, { status: 404 });
     }
-    return NextResponse.json({
+    return jsonNoStore({
       supplier: canSeePrices ? supplier : redactSupplierPrices(supplier),
       pricesVisible: canSeePrices,
     });
   }
 
   const suppliers = await listSuppliers();
-  return NextResponse.json({
+  return jsonNoStore({
     suppliers: canSeePrices ? suppliers : redactCatalogPrices(suppliers),
     pricesVisible: canSeePrices,
   });

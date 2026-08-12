@@ -72,6 +72,7 @@ export default async function HomePage() {
                     <div>
                       <Link
                         href={`/suppliers/${supplier.id}`}
+                        prefetch={false}
                         className="btn btn-primary"
                       >
                         View catalogue
@@ -84,7 +85,7 @@ export default async function HomePage() {
           </div>
 
           <MotionReveal className="section" delayMs={80}>
-            <Link href="/suppliers" className="btn btn-ghost">
+            <Link href="/suppliers" prefetch={false} className="btn btn-ghost">
               See all suppliers
             </Link>
           </MotionReveal>

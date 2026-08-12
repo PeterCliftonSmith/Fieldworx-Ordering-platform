@@ -50,6 +50,7 @@ export default async function SuppliersPage() {
                   <div>
                     <Link
                       href={`/suppliers/${supplier.id}`}
+                      prefetch={false}
                       className="btn btn-primary"
                     >
                       Open catalogue
