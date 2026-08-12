@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/session";
+import { requireAdmin } from "@/lib/admin/auth";
 import { createSupplier, listSuppliers } from "@/lib/catalog-store";
 import type { SupplierInput } from "@/data/types";
 

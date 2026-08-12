@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupplierInput } from "@/data/types";
-import { requireAdmin } from "@/lib/admin/session";
+import { requireAdmin } from "@/lib/admin/auth";
 import {
   deleteSupplier,
   getSupplier,

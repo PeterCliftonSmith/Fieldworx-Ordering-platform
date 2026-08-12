@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow Cursor Cloud preview hosts to load /_next assets without warnings.
+  allowedDevOrigins: ["*.agent.cvm.dev", "*.cvm.dev"],
 };
 
 export default nextConfig;

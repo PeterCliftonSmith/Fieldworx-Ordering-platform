@@ -43,5 +43,5 @@ export async function isValidAdminSessionToken(
 }
 
 export async function verifyAdminPassword(password: string): Promise<boolean> {
-  return timingSafeEqualString(password, getAdminPassword());
+  return timingSafeEqualString(password.trim(), getAdminPassword());
 }
