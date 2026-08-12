@@ -1,5 +1,15 @@
 export const DEFAULT_VAT_RATE = 0.15;
 
+export type ProductVariation = {
+  id: string;
+  name: string;
+  unit: string;
+  priceExVat: number;
+  priceInclVat: number;
+  image: string;
+  imageAlt: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -9,6 +19,7 @@ export type Product = {
   imageAlt: string;
   priceExVat: number;
   priceInclVat: number;
+  variations: ProductVariation[];
 };
 
 export type Supplier = {
@@ -32,6 +43,18 @@ export type SupplierInput = Omit<Supplier, "id" | "products"> & {
   products?: ProductInput[];
 };
 
+export type ProductVariationInput = {
+  id?: string;
+  name: string;
+  unit?: string;
+  priceExVat?: number;
+  priceInclVat?: number;
+  image?: string;
+  imageAlt?: string;
+  /** @deprecated Legacy field treated as price excluding VAT */
+  price?: number;
+};
+
 export type ProductInput = {
   id?: string;
   name: string;
@@ -41,6 +64,7 @@ export type ProductInput = {
   imageAlt?: string;
   priceExVat?: number;
   priceInclVat?: number;
+  variations?: ProductVariationInput[];
   /** @deprecated Legacy field treated as price excluding VAT */
   price?: number;
 };

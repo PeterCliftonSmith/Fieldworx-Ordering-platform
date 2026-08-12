@@ -122,7 +122,9 @@ export function OrderDraft() {
           </h2>
           <ul className="order-lines">
             {group.lines.map((line) => (
-              <li key={`${line.supplierId}-${line.productId}`}>
+              <li
+                key={`${line.supplierId}-${line.productId}-${line.variationId ?? "base"}`}
+              >
                 <div className="order-line-main">
                   <div className="order-line-media">
                     {line.image ? (
@@ -131,6 +133,11 @@ export function OrderDraft() {
                     ) : null}
                     <div>
                       <p className="order-line-name">{line.name}</p>
+                      {line.variationName ? (
+                        <p className="order-line-variation">
+                          {line.variationName}
+                        </p>
+                      ) : null}
                       <p className="muted">
                         {formatZar(line.priceExVat)} excl /{" "}
                         {formatZar(line.priceInclVat)} incl · {line.unit}
@@ -139,11 +146,15 @@ export function OrderDraft() {
                   </div>
                 </div>
                 <div className="order-line-actions">
-                  <label className="sr-only" htmlFor={`line-${line.productId}`}>
+                  <label
+                    className="sr-only"
+                    htmlFor={`line-${line.productId}-${line.variationId ?? "base"}`}
+                  >
                     Quantity for {line.name}
+                    {line.variationName ? ` (${line.variationName})` : ""}
                   </label>
                   <input
-                    id={`line-${line.productId}`}
+                    id={`line-${line.productId}-${line.variationId ?? "base"}`}
                     className="qty-input"
                     type="number"
                     min={1}
@@ -153,6 +164,7 @@ export function OrderDraft() {
                         line.supplierId,
                         line.productId,
                         Math.max(1, Number(e.target.value) || 1),
+                        line.variationId,
                       )
                     }
                   />
@@ -166,7 +178,11 @@ export function OrderDraft() {
                     type="button"
                     className="text-btn"
                     onClick={() =>
-                      removeItem(line.supplierId, line.productId)
+                      removeItem(
+                        line.supplierId,
+                        line.productId,
+                        line.variationId,
+                      )
                     }
                   >
                     Remove

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AddToOrder } from "@/components/AddToOrder";
+import { ProductCatalogueItem } from "@/components/AddToOrder";
 import { SupplierImage } from "@/components/SupplierImage";
 import { getSupplier } from "@/lib/catalog-store";
-import { formatZar } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -60,44 +59,20 @@ export default async function SupplierDetailPage({ params }: PageProps) {
           ) : (
             <div className="product-list">
               {supplier.products.map((product) => (
-                <article key={product.id} className="product-row">
-                  <div className="product-media">
-                    {product.image ? (
-                      <SupplierImage
-                        src={product.image}
-                        alt={product.imageAlt || product.name}
-                      />
-                    ) : (
-                      <div className="product-media-empty" aria-hidden="true" />
-                    )}
-                  </div>
-                  <div className="product-copy">
-                    <p className="product-name">{product.name}</p>
-                    <p className="muted small">
-                      {product.category} · {product.unit}
-                    </p>
-                    <div className="product-prices">
-                      <p>
-                        <strong>{formatZar(product.priceExVat)}</strong>
-                        <span className="muted"> excl. VAT</span>
-                      </p>
-                      <p className="muted small">
-                        {formatZar(product.priceInclVat)} incl. VAT
-                      </p>
-                    </div>
-                  </div>
-                  <AddToOrder
-                    supplierId={supplier.id}
-                    supplierName={supplier.name}
-                    productId={product.id}
-                    productName={product.name}
-                    unit={product.unit}
-                    image={product.image}
-                    imageAlt={product.imageAlt || product.name}
-                    priceExVat={product.priceExVat}
-                    priceInclVat={product.priceInclVat}
-                  />
-                </article>
+                <ProductCatalogueItem
+                  key={product.id}
+                  supplierId={supplier.id}
+                  supplierName={supplier.name}
+                  productId={product.id}
+                  productName={product.name}
+                  category={product.category}
+                  unit={product.unit}
+                  image={product.image}
+                  imageAlt={product.imageAlt || product.name}
+                  priceExVat={product.priceExVat}
+                  priceInclVat={product.priceInclVat}
+                  variations={product.variations ?? []}
+                />
               ))}
             </div>
           )}

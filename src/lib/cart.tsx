@@ -16,6 +16,8 @@ export type CartLine = {
   supplierName: string;
   productId: string;
   name: string;
+  variationId?: string;
+  variationName?: string;
   unit: string;
   image: string;
   imageAlt: string;
@@ -29,6 +31,8 @@ type AddItemInput = {
   supplierName: string;
   productId: string;
   name: string;
+  variationId?: string;
+  variationName?: string;
   unit: string;
   image: string;
   imageAlt: string;
@@ -49,17 +53,28 @@ type CartContextValue = {
     supplierId: string,
     productId: string,
     quantity: number,
+    variationId?: string,
   ) => void;
-  removeItem: (supplierId: string, productId: string) => void;
+  removeItem: (
+    supplierId: string,
+    productId: string,
+    variationId?: string,
+  ) => void;
   clear: () => void;
 };
 
-const STORAGE_KEY = "fieldworx-order-draft-v3";
+const STORAGE_KEY = "fieldworx-order-draft-v4";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function lineKey(supplierId: string, productId: string) {
-  return `${supplierId}:${productId}`;
+export function lineKey(
+  supplierId: string,
+  productId: string,
+  variationId?: string,
+) {
+  return variationId
+    ? `${supplierId}:${productId}:${variationId}`
+    : `${supplierId}:${productId}`;
 }
 
 function normalizeLines(raw: unknown): CartLine[] {
@@ -97,6 +112,14 @@ function normalizeLines(raw: unknown): CartLine[] {
           typeof line.supplierName === "string" ? line.supplierName : "Supplier",
         productId: line.productId,
         name: line.name,
+        variationId:
+          typeof line.variationId === "string" && line.variationId
+            ? line.variationId
+            : undefined,
+        variationName:
+          typeof line.variationName === "string" && line.variationName
+            ? line.variationName
+            : undefined,
         unit: typeof line.unit === "string" ? line.unit : "",
         image: typeof line.image === "string" ? line.image : "",
         imageAlt:
@@ -134,13 +157,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((input: AddItemInput) => {
     const quantity = input.quantity ?? 1;
     setLines((current) => {
-      const key = lineKey(input.supplierId, input.productId);
+      const key = lineKey(input.supplierId, input.productId, input.variationId);
       const existing = current.find(
-        (line) => lineKey(line.supplierId, line.productId) === key,
+        (line) =>
+          lineKey(line.supplierId, line.productId, line.variationId) === key,
       );
       if (existing) {
         return current.map((line) =>
-          lineKey(line.supplierId, line.productId) === key
+          lineKey(line.supplierId, line.productId, line.variationId) === key
             ? {
                 ...line,
                 ...input,
@@ -156,6 +180,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           supplierName: input.supplierName,
           productId: input.productId,
           name: input.name,
+          variationId: input.variationId,
+          variationName: input.variationName,
           unit: input.unit,
           image: input.image,
           imageAlt: input.imageAlt,
@@ -168,18 +194,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setQuantity = useCallback(
-    (supplierId: string, productId: string, quantity: number) => {
+    (
+      supplierId: string,
+      productId: string,
+      quantity: number,
+      variationId?: string,
+    ) => {
+      const key = lineKey(supplierId, productId, variationId);
       setLines((current) => {
         if (quantity <= 0) {
           return current.filter(
             (line) =>
-              lineKey(line.supplierId, line.productId) !==
-              lineKey(supplierId, productId),
+              lineKey(line.supplierId, line.productId, line.variationId) !==
+              key,
           );
         }
         return current.map((line) =>
-          lineKey(line.supplierId, line.productId) ===
-          lineKey(supplierId, productId)
+          lineKey(line.supplierId, line.productId, line.variationId) === key
             ? { ...line, quantity }
             : line,
         );
@@ -188,15 +219,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const removeItem = useCallback((supplierId: string, productId: string) => {
-    setLines((current) =>
-      current.filter(
-        (line) =>
-          lineKey(line.supplierId, line.productId) !==
-          lineKey(supplierId, productId),
-      ),
-    );
-  }, []);
+  const removeItem = useCallback(
+    (supplierId: string, productId: string, variationId?: string) => {
+      const key = lineKey(supplierId, productId, variationId);
+      setLines((current) =>
+        current.filter(
+          (line) =>
+            lineKey(line.supplierId, line.productId, line.variationId) !== key,
+        ),
+      );
+    },
+    [],
+  );
 
   const clear = useCallback(() => setLines([]), []);
 

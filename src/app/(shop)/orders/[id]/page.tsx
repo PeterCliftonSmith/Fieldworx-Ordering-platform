@@ -69,7 +69,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
             </h2>
             <ul className="order-lines">
               {group.lines.map((line) => (
-                <li key={`${line.supplierId}-${line.productId}`}>
+                <li
+                  key={`${line.supplierId}-${line.productId}-${line.variationId ?? "base"}`}
+                >
                   <div className="order-line-main">
                     <div className="order-line-media">
                       {line.image ? (
@@ -81,6 +83,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       ) : null}
                       <div>
                         <p className="order-line-name">{line.name}</p>
+                        {line.variationName ? (
+                          <p className="order-line-variation">
+                            {line.variationName}
+                          </p>
+                        ) : null}
                         <p className="muted">
                           Qty {line.quantity} · {line.unit} ·{" "}
                           {formatZar(line.priceExVat)} excl /{" "}

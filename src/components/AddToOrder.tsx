@@ -1,9 +1,111 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ProductVariation } from "@/data/types";
 import { useCustomerAuth } from "@/lib/customer/auth-context";
 import { useCart } from "@/lib/cart";
+import { formatZar } from "@/lib/format";
+import { SupplierImage } from "@/components/SupplierImage";
+
+type ProductCatalogueItemProps = {
+  supplierId: string;
+  supplierName: string;
+  productId: string;
+  productName: string;
+  category: string;
+  unit: string;
+  image: string;
+  imageAlt: string;
+  priceExVat: number;
+  priceInclVat: number;
+  variations: ProductVariation[];
+};
+
+export function ProductCatalogueItem({
+  supplierId,
+  supplierName,
+  productId,
+  productName,
+  category,
+  unit,
+  image,
+  imageAlt,
+  priceExVat,
+  priceInclVat,
+  variations,
+}: ProductCatalogueItemProps) {
+  const hasVariations = variations.length > 0;
+  const [variationId, setVariationId] = useState(
+    hasVariations ? variations[0].id : "",
+  );
+  const selected = useMemo(
+    () => variations.find((variation) => variation.id === variationId),
+    [variations, variationId],
+  );
+
+  const displayUnit = selected?.unit ?? unit;
+  const displayImage = selected?.image || image;
+  const displayImageAlt = selected?.imageAlt || imageAlt || productName;
+  const displayPriceEx = selected?.priceExVat ?? priceExVat;
+  const displayPriceIncl = selected?.priceInclVat ?? priceInclVat;
+  const fromPriceEx = hasVariations
+    ? Math.min(...variations.map((variation) => variation.priceExVat))
+    : priceExVat;
+
+  return (
+    <article className="product-row">
+      <div className="product-media">
+        {displayImage ? (
+          <SupplierImage src={displayImage} alt={displayImageAlt} />
+        ) : (
+          <div className="product-media-empty" aria-hidden="true" />
+        )}
+      </div>
+      <div className="product-copy">
+        <p className="product-name">{productName}</p>
+        <p className="muted small">
+          {category}
+          {hasVariations
+            ? ` · ${variations.length} varieties`
+            : ` · ${unit}`}
+        </p>
+        {hasVariations && !selected ? (
+          <div className="product-prices">
+            <p>
+              <strong>From {formatZar(fromPriceEx)}</strong>
+              <span className="muted"> excl. VAT</span>
+            </p>
+          </div>
+        ) : (
+          <div className="product-prices">
+            <p>
+              <strong>{formatZar(displayPriceEx)}</strong>
+              <span className="muted"> excl. VAT</span>
+            </p>
+            <p className="muted small">
+              {formatZar(displayPriceIncl)} incl. VAT · {displayUnit}
+            </p>
+          </div>
+        )}
+      </div>
+      <AddToOrder
+        supplierId={supplierId}
+        supplierName={supplierName}
+        productId={productId}
+        productName={productName}
+        unit={displayUnit}
+        image={displayImage}
+        imageAlt={displayImageAlt}
+        priceExVat={displayPriceEx}
+        priceInclVat={displayPriceIncl}
+        variations={variations}
+        variationId={variationId}
+        onVariationChange={setVariationId}
+      />
+    </article>
+  );
+}
 
 type AddToOrderProps = {
   supplierId: string;
@@ -15,6 +117,9 @@ type AddToOrderProps = {
   imageAlt: string;
   priceExVat: number;
   priceInclVat: number;
+  variations?: ProductVariation[];
+  variationId?: string;
+  onVariationChange?: (variationId: string) => void;
 };
 
 export function AddToOrder({
@@ -27,11 +132,18 @@ export function AddToOrder({
   imageAlt,
   priceExVat,
   priceInclVat,
+  variations = [],
+  variationId = "",
+  onVariationChange,
 }: AddToOrderProps) {
   const { customer, ready } = useCustomerAuth();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const hasVariations = variations.length > 0;
+  const selected = variations.find((variation) => variation.id === variationId);
 
   if (ready && !customer) {
     return (
@@ -47,16 +159,23 @@ export function AddToOrder({
   }
 
   function handleAdd() {
+    if (hasVariations && !selected) {
+      setLocalError("Choose a variety first.");
+      return;
+    }
+    setLocalError(null);
     addItem({
       supplierId,
       supplierName,
       productId,
       name: productName,
-      unit,
-      image,
-      imageAlt,
-      priceExVat,
-      priceInclVat,
+      variationId: selected?.id,
+      variationName: selected?.name,
+      unit: selected?.unit ?? unit,
+      image: selected?.image || image,
+      imageAlt: selected?.imageAlt || imageAlt,
+      priceExVat: selected?.priceExVat ?? priceExVat,
+      priceInclVat: selected?.priceInclVat ?? priceInclVat,
       quantity,
     });
     setJustAdded(true);
@@ -65,10 +184,29 @@ export function AddToOrder({
 
   return (
     <div className="add-to-order">
-      <label className="qty-label" htmlFor={`qty-${productId}`}>
+      {hasVariations ? (
+        <label className="variation-label" htmlFor={`var-${productId}`}>
+          Variety
+          <select
+            id={`var-${productId}`}
+            className="variation-select"
+            value={variationId}
+            onChange={(e) => onVariationChange?.(e.target.value)}
+            aria-label={`Variety for ${productName}`}
+          >
+            {variations.map((variation) => (
+              <option key={variation.id} value={variation.id}>
+                {variation.name} · {variation.unit} ·{" "}
+                {formatZar(variation.priceExVat)} excl
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      <label className="qty-label" htmlFor={`qty-${productId}-${variationId || "base"}`}>
         Qty
         <input
-          id={`qty-${productId}`}
+          id={`qty-${productId}-${variationId || "base"}`}
           className="qty-input"
           type="number"
           min={1}
@@ -83,10 +221,11 @@ export function AddToOrder({
         type="button"
         className={`btn btn-primary ${justAdded ? "btn-pulse" : ""}`}
         onClick={handleAdd}
-        disabled={!ready}
+        disabled={!ready || (hasVariations && !selected)}
       >
         {justAdded ? "Added" : "Add to order"}
       </button>
+      {localError ? <p className="add-to-order-error">{localError}</p> : null}
     </div>
   );
 }

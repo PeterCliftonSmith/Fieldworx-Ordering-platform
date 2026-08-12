@@ -5,6 +5,8 @@ import type {
   Catalog,
   Product,
   ProductInput,
+  ProductVariation,
+  ProductVariationInput,
   Supplier,
   SupplierInput,
 } from "@/data/types";
@@ -118,7 +120,14 @@ function assertMoney(value: number, label: string): number {
   return roundMoney(value);
 }
 
-function normalizeProduct(input: ProductInput, id: string): Product {
+function normalizeMoneyPair(
+  input: {
+    priceExVat?: number;
+    priceInclVat?: number;
+    price?: number;
+  },
+  label: string,
+): { priceExVat: number; priceInclVat: number } {
   const legacyPrice =
     input.priceExVat == null && input.priceInclVat == null && input.price != null
       ? Number(input.price)
@@ -128,37 +137,103 @@ function normalizeProduct(input: ProductInput, id: string): Product {
   let priceInclVat: number;
 
   if (input.priceExVat != null && input.priceInclVat != null) {
-    priceExVat = assertMoney(Number(input.priceExVat), "Price excluding VAT");
-    priceInclVat = assertMoney(Number(input.priceInclVat), "Price including VAT");
+    priceExVat = assertMoney(Number(input.priceExVat), `${label} excluding VAT`);
+    priceInclVat = assertMoney(
+      Number(input.priceInclVat),
+      `${label} including VAT`,
+    );
   } else if (input.priceExVat != null) {
-    priceExVat = assertMoney(Number(input.priceExVat), "Price excluding VAT");
+    priceExVat = assertMoney(Number(input.priceExVat), `${label} excluding VAT`);
     priceInclVat = priceInclFromEx(priceExVat);
   } else if (input.priceInclVat != null) {
-    priceInclVat = assertMoney(Number(input.priceInclVat), "Price including VAT");
+    priceInclVat = assertMoney(
+      Number(input.priceInclVat),
+      `${label} including VAT`,
+    );
     priceExVat = priceExFromIncl(priceInclVat);
   } else if (legacyPrice != null) {
-    priceExVat = assertMoney(legacyPrice, "Product price");
+    priceExVat = assertMoney(legacyPrice, label);
     priceInclVat = priceInclFromEx(priceExVat);
   } else {
-    throw new Error("Product price excluding or including VAT is required.");
+    throw new Error(`${label} excluding or including VAT is required.`);
   }
 
   if (priceInclVat < priceExVat) {
-    throw new Error("Price including VAT cannot be lower than price excluding VAT.");
+    throw new Error(
+      `${label} including VAT cannot be lower than price excluding VAT.`,
+    );
   }
 
+  return { priceExVat, priceInclVat };
+}
+
+function normalizeVariation(
+  input: ProductVariationInput,
+  id: string,
+): ProductVariation {
+  const name = input.name.trim();
+  if (!name) throw new Error("Variation name is required.");
+
+  const unit = (input.unit ?? "").trim();
+  if (!unit) throw new Error(`Unit is required for variation "${name}".`);
+
+  const { priceExVat, priceInclVat } = normalizeMoneyPair(
+    input,
+    `Variation "${name}" price`,
+  );
+
   const image = (input.image ?? "").trim();
-  const imageAlt = (input.imageAlt ?? "").trim() || input.name.trim();
+  const imageAlt = (input.imageAlt ?? "").trim() || name;
 
   return {
     id,
-    name: input.name.trim(),
-    unit: input.unit.trim(),
+    name,
+    unit,
+    priceExVat,
+    priceInclVat,
+    image,
+    imageAlt,
+  };
+}
+
+function normalizeProduct(input: ProductInput, id: string): Product {
+  const name = input.name.trim();
+  if (!name) throw new Error("Product name is required.");
+
+  const unit = input.unit.trim();
+  if (!unit) throw new Error(`Unit is required for product "${name}".`);
+
+  const { priceExVat, priceInclVat } = normalizeMoneyPair(
+    input,
+    `Product "${name}" price`,
+  );
+
+  const image = (input.image ?? "").trim();
+  const imageAlt = (input.imageAlt ?? "").trim() || name;
+
+  const variationIds = new Set<string>();
+  const variations = (input.variations ?? [])
+    .filter((variation) => variation.name?.trim())
+    .map((variation) => {
+      const preferred = variation.id?.trim();
+      const variationId =
+        preferred && !variationIds.has(preferred)
+          ? preferred
+          : uniqueId(variation.name, variationIds);
+      variationIds.add(variationId);
+      return normalizeVariation(variation, variationId);
+    });
+
+  return {
+    id,
+    name,
+    unit,
     category: input.category.trim(),
     image,
     imageAlt,
     priceExVat,
     priceInclVat,
+    variations,
   };
 }
 

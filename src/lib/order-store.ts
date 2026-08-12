@@ -59,11 +59,22 @@ function normalizeLine(input: Partial<OrderLine>): OrderLine {
     throw new Error("Each order line needs a valid including-VAT price.");
   }
 
+  const variationId =
+    typeof input.variationId === "string" && input.variationId.trim()
+      ? input.variationId.trim()
+      : undefined;
+  const variationName =
+    typeof input.variationName === "string" && input.variationName.trim()
+      ? input.variationName.trim()
+      : undefined;
+
   return {
     supplierId: String(input.supplierId),
     supplierName: String(input.supplierName ?? "Supplier"),
     productId: String(input.productId),
     name: String(input.name),
+    variationId,
+    variationName,
     unit: String(input.unit ?? ""),
     image: String(input.image ?? ""),
     imageAlt: String(input.imageAlt ?? input.name),

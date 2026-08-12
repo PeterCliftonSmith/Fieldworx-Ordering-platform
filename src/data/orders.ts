@@ -3,6 +3,8 @@ export type OrderLine = {
   supplierName: string;
   productId: string;
   name: string;
+  variationId?: string;
+  variationName?: string;
   unit: string;
   image: string;
   imageAlt: string;

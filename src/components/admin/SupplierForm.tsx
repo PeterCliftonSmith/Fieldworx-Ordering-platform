@@ -2,8 +2,19 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { Product, Supplier } from "@/data/types";
+import type { Product, ProductVariation, Supplier } from "@/data/types";
 import { priceExFromIncl, priceInclFromEx } from "@/lib/format";
+
+type VariationDraft = {
+  key: string;
+  id?: string;
+  name: string;
+  unit: string;
+  image: string;
+  imageAlt: string;
+  priceExVat: string;
+  priceInclVat: string;
+};
 
 type ProductDraft = {
   key: string;
@@ -15,12 +26,28 @@ type ProductDraft = {
   imageAlt: string;
   priceExVat: string;
   priceInclVat: string;
+  variations: VariationDraft[];
 };
 
 type SupplierFormProps = {
   mode: "create" | "edit";
   initial?: Supplier;
 };
+
+function toVariationDrafts(
+  variations: ProductVariation[] = [],
+): VariationDraft[] {
+  return variations.map((variation, index) => ({
+    key: `${variation.id}-${index}`,
+    id: variation.id,
+    name: variation.name,
+    unit: variation.unit,
+    image: variation.image,
+    imageAlt: variation.imageAlt,
+    priceExVat: String(variation.priceExVat),
+    priceInclVat: String(variation.priceInclVat),
+  }));
+}
 
 function toDrafts(products: Product[] = []): ProductDraft[] {
   return products.map((product, index) => ({
@@ -33,7 +60,20 @@ function toDrafts(products: Product[] = []): ProductDraft[] {
     imageAlt: product.imageAlt,
     priceExVat: String(product.priceExVat),
     priceInclVat: String(product.priceInclVat),
+    variations: toVariationDrafts(product.variations),
   }));
+}
+
+function emptyVariation(): VariationDraft {
+  return {
+    key: `var-${Math.random().toString(36).slice(2, 9)}`,
+    name: "",
+    unit: "",
+    image: "",
+    imageAlt: "",
+    priceExVat: "",
+    priceInclVat: "",
+  };
 }
 
 function emptyProduct(): ProductDraft {
@@ -46,6 +86,7 @@ function emptyProduct(): ProductDraft {
     imageAlt: "",
     priceExVat: "",
     priceInclVat: "",
+    variations: [],
   };
 }
 
@@ -102,6 +143,82 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
     );
   }
 
+  function updateVariation(
+    productKey: string,
+    variationKey: string,
+    patch: Partial<VariationDraft>,
+  ) {
+    setProducts((current) =>
+      current.map((product) => {
+        if (product.key !== productKey) return product;
+        return {
+          ...product,
+          variations: product.variations.map((variation) =>
+            variation.key === variationKey
+              ? { ...variation, ...patch }
+              : variation,
+          ),
+        };
+      }),
+    );
+  }
+
+  function updateVariationPrice(
+    productKey: string,
+    variationKey: string,
+    field: "priceExVat" | "priceInclVat",
+    value: string,
+  ) {
+    setProducts((current) =>
+      current.map((product) => {
+        if (product.key !== productKey) return product;
+        return {
+          ...product,
+          variations: product.variations.map((variation) => {
+            if (variation.key !== variationKey) return variation;
+            const next = { ...variation, [field]: value };
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || value.trim() === "") return next;
+            if (field === "priceExVat") {
+              next.priceInclVat = String(priceInclFromEx(amount));
+            } else {
+              next.priceExVat = String(priceExFromIncl(amount));
+            }
+            return next;
+          }),
+        };
+      }),
+    );
+  }
+
+  function addVariation(productKey: string) {
+    setProducts((current) =>
+      current.map((product) =>
+        product.key === productKey
+          ? {
+              ...product,
+              variations: [...product.variations, emptyVariation()],
+            }
+          : product,
+      ),
+    );
+  }
+
+  function removeVariation(productKey: string, variationKey: string) {
+    setProducts((current) =>
+      current.map((product) =>
+        product.key === productKey
+          ? {
+              ...product,
+              variations: product.variations.filter(
+                (variation) => variation.key !== variationKey,
+              ),
+            }
+          : product,
+      ),
+    );
+  }
+
   function removeProduct(key: string) {
     setProducts((current) => {
       const next = current.filter((product) => product.key !== key);
@@ -133,6 +250,17 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
           imageAlt: product.imageAlt || product.name,
           priceExVat: Number(product.priceExVat),
           priceInclVat: Number(product.priceInclVat),
+          variations: product.variations
+            .filter((variation) => variation.name.trim())
+            .map((variation) => ({
+              id: variation.id,
+              name: variation.name,
+              unit: variation.unit,
+              image: variation.image,
+              imageAlt: variation.imageAlt || variation.name,
+              priceExVat: Number(variation.priceExVat),
+              priceInclVat: Number(variation.priceInclVat),
+            })),
         })),
     };
 
@@ -291,8 +419,9 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
           <div>
             <h2>Products</h2>
             <p className="muted small">
-              Enter either VAT price and the other fills in at 15%. You can still
-              edit both before saving.
+              Enter either VAT price and the other fills in at 15%. Add varieties
+              when the same product is sold in different forms (for example loaf
+              vs grated cheese).
             </p>
           </div>
           <button
@@ -324,7 +453,10 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
                 <div className="admin-product-preview">
                   {product.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.image} alt={product.imageAlt || product.name || "Product"} />
+                    <img
+                      src={product.image}
+                      alt={product.imageAlt || product.name || "Product"}
+                    />
                   ) : (
                     <div className="admin-product-preview-empty">No image</div>
                   )}
@@ -354,7 +486,7 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
                     />
                   </label>
                   <label>
-                    Unit
+                    Default unit
                     <input
                       value={product.unit}
                       onChange={(e) =>
@@ -416,6 +548,136 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
                     />
                   </label>
                 </div>
+              </div>
+
+              <div className="admin-variations">
+                <div className="admin-variations-heading">
+                  <div>
+                    <h3>Varieties</h3>
+                    <p className="muted small">
+                      Optional. When added, customers choose one before ordering.
+                      Each variety can have its own unit, price, and image.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => addVariation(product.key)}
+                  >
+                    Add variety
+                  </button>
+                </div>
+
+                {product.variations.length === 0 ? (
+                  <p className="muted small">No varieties — sold as a single item.</p>
+                ) : (
+                  <div className="admin-variation-list">
+                    {product.variations.map((variation, variationIndex) => (
+                      <div
+                        className="admin-variation-card"
+                        key={variation.key}
+                      >
+                        <div className="admin-product-card-top">
+                          <p className="admin-product-index">
+                            Variety #{variationIndex + 1}
+                          </p>
+                          <button
+                            type="button"
+                            className="text-btn"
+                            onClick={() =>
+                              removeVariation(product.key, variation.key)
+                            }
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="admin-variation-fields">
+                          <label>
+                            Name
+                            <input
+                              value={variation.name}
+                              onChange={(e) =>
+                                updateVariation(product.key, variation.key, {
+                                  name: e.target.value,
+                                })
+                              }
+                              placeholder="Grated"
+                            />
+                          </label>
+                          <label>
+                            Unit
+                            <input
+                              value={variation.unit}
+                              onChange={(e) =>
+                                updateVariation(product.key, variation.key, {
+                                  unit: e.target.value,
+                                })
+                              }
+                              placeholder="kg"
+                            />
+                          </label>
+                          <label>
+                            Price excl. VAT
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={variation.priceExVat}
+                              onChange={(e) =>
+                                updateVariationPrice(
+                                  product.key,
+                                  variation.key,
+                                  "priceExVat",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </label>
+                          <label>
+                            Price incl. VAT
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={variation.priceInclVat}
+                              onChange={(e) =>
+                                updateVariationPrice(
+                                  product.key,
+                                  variation.key,
+                                  "priceInclVat",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </label>
+                          <label className="span-2">
+                            Image URL (optional)
+                            <input
+                              value={variation.image}
+                              onChange={(e) =>
+                                updateVariation(product.key, variation.key, {
+                                  image: e.target.value,
+                                })
+                              }
+                              placeholder="Leave blank to use product image"
+                            />
+                          </label>
+                          <label className="span-2">
+                            Image description
+                            <input
+                              value={variation.imageAlt}
+                              onChange={(e) =>
+                                updateVariation(product.key, variation.key, {
+                                  imageAlt: e.target.value,
+                                })
+                              }
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
