@@ -25,6 +25,31 @@ function timingSafeEqualString(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
+function toBase64Url(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  const base64 =
+    typeof btoa === "function"
+      ? btoa(binary)
+      : Buffer.from(value, "utf8").toString("base64");
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function fromBase64Url(value: string): string {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padLength = (4 - (padded.length % 4)) % 4;
+  const base64 = padded + "=".repeat(padLength);
+  if (typeof atob === "function") {
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+  return Buffer.from(base64, "base64").toString("utf8");
+}
+
 export type CustomerSessionPayload = {
   id: string;
   username: string;
@@ -38,30 +63,45 @@ export async function createCustomerSessionToken(input: {
 }): Promise<string> {
   const maxAgeSeconds = input.maxAgeSeconds ?? 60 * 60 * 12;
   const exp = Math.floor(Date.now() / 1000) + maxAgeSeconds;
-  const body = `${input.id}.${input.username}.${exp}`;
-  const sig = await sha256Hex(
-    `${body}:${getCustomerSessionSecret()}`,
+  const payload = toBase64Url(
+    JSON.stringify({
+      id: input.id,
+      username: input.username,
+      exp,
+    } satisfies CustomerSessionPayload),
   );
-  return `${body}.${sig}`;
+  const sig = await sha256Hex(`${payload}:${getCustomerSessionSecret()}`);
+  return `${payload}.${sig}`;
 }
 
 export async function parseCustomerSessionToken(
   token: string | undefined,
 ): Promise<CustomerSessionPayload | null> {
   if (!token) return null;
-  const parts = token.split(".");
-  if (parts.length !== 4) return null;
-  const [id, username, expRaw, sig] = parts;
-  if (!id || !username || !expRaw || !sig) return null;
+  const separator = token.lastIndexOf(".");
+  if (separator <= 0) return null;
 
-  const exp = Number(expRaw);
-  if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return null;
+  const payload = token.slice(0, separator);
+  const sig = token.slice(separator + 1);
+  if (!payload || !sig) return null;
 
-  const body = `${id}.${username}.${expRaw}`;
-  const expected = await sha256Hex(`${body}:${getCustomerSessionSecret()}`);
+  const expected = await sha256Hex(`${payload}:${getCustomerSessionSecret()}`);
   if (!timingSafeEqualString(sig, expected)) return null;
 
-  return { id, username, exp };
+  try {
+    const parsed = JSON.parse(fromBase64Url(payload)) as CustomerSessionPayload;
+    if (
+      typeof parsed.id !== "string" ||
+      typeof parsed.username !== "string" ||
+      typeof parsed.exp !== "number"
+    ) {
+      return null;
+    }
+    if (parsed.exp * 1000 < Date.now()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 export function customerSessionCookieOptions(request?: Request) {
