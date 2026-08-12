@@ -1266,6 +1266,12 @@ img {
   font-weight: 600;
 }
 
+.admin-success {
+  margin: 0 0 1rem;
+  color: var(--field);
+  font-weight: 600;
+}
+
 .btn-danger {
   background: transparent;
   border-color: color-mix(in srgb, #8a2f1f 45%, transparent);

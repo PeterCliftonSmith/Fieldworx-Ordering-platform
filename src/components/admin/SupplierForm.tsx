@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, ProductVariation, Supplier } from "@/data/types";
 import { priceExFromIncl, priceInclFromEx } from "@/lib/format";
@@ -64,21 +64,29 @@ function toDrafts(products: Product[] = []): ProductDraft[] {
   }));
 }
 
-function emptyVariation(): VariationDraft {
+function newDraftKey(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function emptyVariation(defaults?: {
+  unit?: string;
+  priceExVat?: string;
+  priceInclVat?: string;
+}): VariationDraft {
   return {
-    key: `var-${Math.random().toString(36).slice(2, 9)}`,
+    key: newDraftKey("var"),
     name: "",
-    unit: "",
+    unit: defaults?.unit ?? "",
     image: "",
     imageAlt: "",
-    priceExVat: "",
-    priceInclVat: "",
+    priceExVat: defaults?.priceExVat ?? "",
+    priceInclVat: defaults?.priceInclVat ?? "",
   };
 }
 
 function emptyProduct(): ProductDraft {
   return {
-    key: `new-${Math.random().toString(36).slice(2, 9)}`,
+    key: newDraftKey("new"),
     name: "",
     unit: "",
     category: "",
@@ -90,6 +98,95 @@ function emptyProduct(): ProductDraft {
   };
 }
 
+function variationHasAnyContent(variation: VariationDraft) {
+  return Boolean(
+    variation.name.trim() ||
+      variation.unit.trim() ||
+      variation.image.trim() ||
+      variation.imageAlt.trim() ||
+      variation.priceExVat.trim() ||
+      variation.priceInclVat.trim(),
+  );
+}
+
+function buildProductsPayload(products: ProductDraft[]) {
+  const namedProducts = products.filter((product) => product.name.trim());
+  if (namedProducts.length === 0) {
+    throw new Error("Add at least one product before saving.");
+  }
+
+  return namedProducts.map((product, productIndex) => {
+    const label = product.name.trim() || `Product #${productIndex + 1}`;
+    if (!product.unit.trim()) {
+      throw new Error(`Unit is required for ${label}.`);
+    }
+    if (
+      product.priceExVat.trim() === "" ||
+      product.priceInclVat.trim() === "" ||
+      !Number.isFinite(Number(product.priceExVat)) ||
+      !Number.isFinite(Number(product.priceInclVat))
+    ) {
+      throw new Error(
+        `Valid excl. and incl. VAT prices are required for ${label}.`,
+      );
+    }
+
+    const startedVariations = product.variations.filter(variationHasAnyContent);
+    const variations = startedVariations.map((variation, variationIndex) => {
+      const variationLabel =
+        variation.name.trim() || `variety #${variationIndex + 1}`;
+      const unit = variation.unit.trim() || product.unit.trim();
+      const priceExRaw =
+        variation.priceExVat.trim() === ""
+          ? product.priceExVat
+          : variation.priceExVat;
+      const priceInclRaw =
+        variation.priceInclVat.trim() === ""
+          ? product.priceInclVat
+          : variation.priceInclVat;
+
+      if (!variation.name.trim()) {
+        throw new Error(
+          `${label}: give variety #${variationIndex + 1} a name, or remove it.`,
+        );
+      }
+      if (!unit) {
+        throw new Error(`${label}: unit is required for ${variationLabel}.`);
+      }
+      if (
+        !Number.isFinite(Number(priceExRaw)) ||
+        !Number.isFinite(Number(priceInclRaw))
+      ) {
+        throw new Error(
+          `${label}: valid prices are required for ${variationLabel}.`,
+        );
+      }
+
+      return {
+        id: variation.id,
+        name: variation.name.trim(),
+        unit,
+        image: variation.image.trim(),
+        imageAlt: variation.imageAlt.trim() || variation.name.trim(),
+        priceExVat: Number(priceExRaw),
+        priceInclVat: Number(priceInclRaw),
+      };
+    });
+
+    return {
+      id: product.id,
+      name: product.name.trim(),
+      unit: product.unit.trim(),
+      category: product.category.trim(),
+      image: product.image.trim(),
+      imageAlt: product.imageAlt.trim() || product.name.trim(),
+      priceExVat: Number(product.priceExVat),
+      priceInclVat: Number(product.priceInclVat),
+      variations,
+    };
+  });
+}
+
 export function SupplierForm({ mode, initial }: SupplierFormProps) {
   const router = useRouter();
   const [name, setName] = useState(initial?.name ?? "");
@@ -99,12 +196,12 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
   const [image, setImage] = useState(initial?.image ?? "");
   const [imageAlt, setImageAlt] = useState(initial?.imageAlt ?? "");
   const [blurb, setBlurb] = useState(initial?.blurb ?? "");
-  const [products, setProducts] = useState<ProductDraft[]>(
-    toDrafts(initial?.products).length
-      ? toDrafts(initial?.products)
-      : [emptyProduct()],
-  );
+  const [products, setProducts] = useState<ProductDraft[]>(() => {
+    const drafts = toDrafts(initial?.products);
+    return drafts.length ? drafts : [emptyProduct()];
+  });
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -197,7 +294,14 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
         product.key === productKey
           ? {
               ...product,
-              variations: [...product.variations, emptyVariation()],
+              variations: [
+                ...product.variations,
+                emptyVariation({
+                  unit: product.unit,
+                  priceExVat: product.priceExVat,
+                  priceInclVat: product.priceInclVat,
+                }),
+              ],
             }
           : product,
       ),
@@ -226,45 +330,39 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
     });
   }
 
+  function preventAccidentalSubmit(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter") return;
+    const target = event.target as HTMLElement;
+    if (target.tagName === "TEXTAREA") return;
+    if (target.tagName === "BUTTON") return;
+    // Enter inside inputs used to submit early and drop unfinished varieties.
+    event.preventDefault();
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
     setSaving(true);
 
-    const payload = {
-      name,
-      region,
-      specialty,
-      leadTime,
-      image,
-      imageAlt,
-      blurb,
-      products: products
-        .filter((product) => product.name.trim())
-        .map((product) => ({
-          id: product.id,
-          name: product.name,
-          unit: product.unit,
-          category: product.category,
-          image: product.image,
-          imageAlt: product.imageAlt || product.name,
-          priceExVat: Number(product.priceExVat),
-          priceInclVat: Number(product.priceInclVat),
-          variations: product.variations
-            .filter((variation) => variation.name.trim())
-            .map((variation) => ({
-              id: variation.id,
-              name: variation.name,
-              unit: variation.unit,
-              image: variation.image,
-              imageAlt: variation.imageAlt || variation.name,
-              priceExVat: Number(variation.priceExVat),
-              priceInclVat: Number(variation.priceInclVat),
-            })),
-        })),
-    };
-
     try {
+      const productPayload = buildProductsPayload(products);
+      const varietyCount = productPayload.reduce(
+        (total, product) => total + product.variations.length,
+        0,
+      );
+
+      const payload = {
+        name,
+        region,
+        specialty,
+        leadTime,
+        image,
+        imageAlt,
+        blurb,
+        products: productPayload,
+      };
+
       const response = await fetch(
         mode === "create"
           ? "/api/admin/suppliers"
@@ -279,13 +377,33 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
         error?: string;
         supplier?: Supplier;
       };
-      if (!response.ok) {
+      if (!response.ok || !data.supplier) {
         throw new Error(data.error || "Could not save supplier.");
       }
-      router.push("/admin");
+
+      // Keep the editor open and reload from disk so saved varieties are visible.
+      setProducts(toDrafts(data.supplier.products));
+      setName(data.supplier.name);
+      setRegion(data.supplier.region);
+      setSpecialty(data.supplier.specialty);
+      setLeadTime(data.supplier.leadTime);
+      setImage(data.supplier.image);
+      setImageAlt(data.supplier.imageAlt);
+      setBlurb(data.supplier.blurb);
+      setSuccess(
+        varietyCount > 0
+          ? `Saved ${data.supplier.name} with ${varietyCount} ${varietyCount === 1 ? "variety" : "varieties"}.`
+          : `Saved ${data.supplier.name}.`,
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (mode === "create") {
+        router.replace(`/admin/suppliers/${data.supplier.id}`);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save supplier.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -300,6 +418,7 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
 
     setDeleting(true);
     setError(null);
+    setSuccess(null);
     try {
       const response = await fetch(`/api/admin/suppliers/${initial.id}`, {
         method: "DELETE",
@@ -314,13 +433,18 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
       setError(
         err instanceof Error ? err.message : "Could not delete supplier.",
       );
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setDeleting(false);
     }
   }
 
   return (
-    <form className="admin-form" onSubmit={handleSubmit}>
+    <form
+      className="admin-form"
+      onSubmit={handleSubmit}
+      onKeyDown={preventAccidentalSubmit}
+    >
       <div className="admin-form-header">
         <div>
           <p className="section-kicker">Catalogue admin</p>
@@ -348,6 +472,7 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
       </div>
 
       {error ? <p className="admin-error">{error}</p> : null}
+      {success ? <p className="admin-success">{success}</p> : null}
 
       <section className="admin-panel">
         <h2>Supplier details</h2>
@@ -421,7 +546,8 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
             <p className="muted small">
               Enter either VAT price and the other fills in at 15%. Add varieties
               when the same product is sold in different forms (for example loaf
-              vs grated cheese).
+              vs grated cheese). Use Save supplier when all varieties are filled
+              in — Enter in a field will not submit.
             </p>
           </div>
           <button
@@ -555,8 +681,9 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
                   <div>
                     <h3>Varieties</h3>
                     <p className="muted small">
-                      Optional. When added, customers choose one before ordering.
-                      Each variety can have its own unit, price, and image.
+                      Optional. New varieties start with this product&apos;s unit
+                      and prices — change any that differ. Each named variety is
+                      saved.
                     </p>
                   </div>
                   <button
@@ -569,7 +696,9 @@ export function SupplierForm({ mode, initial }: SupplierFormProps) {
                 </div>
 
                 {product.variations.length === 0 ? (
-                  <p className="muted small">No varieties — sold as a single item.</p>
+                  <p className="muted small">
+                    No varieties — sold as a single item.
+                  </p>
                 ) : (
                   <div className="admin-variation-list">
                     {product.variations.map((variation, variationIndex) => (

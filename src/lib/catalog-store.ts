@@ -170,17 +170,26 @@ function normalizeMoneyPair(
 function normalizeVariation(
   input: ProductVariationInput,
   id: string,
+  defaults: { unit: string; priceExVat: number; priceInclVat: number },
 ): ProductVariation {
   const name = input.name.trim();
   if (!name) throw new Error("Variation name is required.");
 
-  const unit = (input.unit ?? "").trim();
+  const unit = (input.unit ?? "").trim() || defaults.unit;
   if (!unit) throw new Error(`Unit is required for variation "${name}".`);
 
-  const { priceExVat, priceInclVat } = normalizeMoneyPair(
-    input,
-    `Variation "${name}" price`,
-  );
+  const hasEx = input.priceExVat != null && Number.isFinite(Number(input.priceExVat));
+  const hasIncl =
+    input.priceInclVat != null && Number.isFinite(Number(input.priceInclVat));
+  const hasLegacy = input.price != null && Number.isFinite(Number(input.price));
+
+  const { priceExVat, priceInclVat } =
+    hasEx || hasIncl || hasLegacy
+      ? normalizeMoneyPair(input, `Variation "${name}" price`)
+      : {
+          priceExVat: defaults.priceExVat,
+          priceInclVat: defaults.priceInclVat,
+        };
 
   const image = (input.image ?? "").trim();
   const imageAlt = (input.imageAlt ?? "").trim() || name;
@@ -210,6 +219,7 @@ function normalizeProduct(input: ProductInput, id: string): Product {
 
   const image = (input.image ?? "").trim();
   const imageAlt = (input.imageAlt ?? "").trim() || name;
+  const defaults = { unit, priceExVat, priceInclVat };
 
   const variationIds = new Set<string>();
   const variations = (input.variations ?? [])
@@ -221,7 +231,7 @@ function normalizeProduct(input: ProductInput, id: string): Product {
           ? preferred
           : uniqueId(variation.name, variationIds);
       variationIds.add(variationId);
-      return normalizeVariation(variation, variationId);
+      return normalizeVariation(variation, variationId, defaults);
     });
 
   return {
