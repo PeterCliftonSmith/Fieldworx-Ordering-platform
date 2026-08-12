@@ -79,60 +79,59 @@ export function lineKey(
 
 function normalizeLines(raw: unknown): CartLine[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const line = item as Partial<CartLine> & { price?: number };
-      if (
-        typeof line.supplierId !== "string" ||
-        typeof line.productId !== "string" ||
-        typeof line.name !== "string"
-      ) {
-        return null;
-      }
+  const lines: CartLine[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const line = item as Partial<CartLine> & { price?: number };
+    if (
+      typeof line.supplierId !== "string" ||
+      typeof line.productId !== "string" ||
+      typeof line.name !== "string"
+    ) {
+      continue;
+    }
 
-      const priceExVat =
-        typeof line.priceExVat === "number"
-          ? line.priceExVat
-          : typeof line.price === "number"
-            ? line.price
-            : null;
-      const priceInclVat =
-        typeof line.priceInclVat === "number"
-          ? line.priceInclVat
-          : priceExVat != null
-            ? roundMoney(priceExVat * 1.15)
-            : null;
+    const priceExVat =
+      typeof line.priceExVat === "number"
+        ? line.priceExVat
+        : typeof line.price === "number"
+          ? line.price
+          : null;
+    const priceInclVat =
+      typeof line.priceInclVat === "number"
+        ? line.priceInclVat
+        : priceExVat != null
+          ? roundMoney(priceExVat * 1.15)
+          : null;
 
-      if (priceExVat == null || priceInclVat == null) return null;
+    if (priceExVat == null || priceInclVat == null) continue;
 
-      return {
-        supplierId: line.supplierId,
-        supplierName:
-          typeof line.supplierName === "string" ? line.supplierName : "Supplier",
-        productId: line.productId,
-        name: line.name,
-        variationId:
-          typeof line.variationId === "string" && line.variationId
-            ? line.variationId
-            : undefined,
-        variationName:
-          typeof line.variationName === "string" && line.variationName
-            ? line.variationName
-            : undefined,
-        unit: typeof line.unit === "string" ? line.unit : "",
-        image: typeof line.image === "string" ? line.image : "",
-        imageAlt:
-          typeof line.imageAlt === "string" ? line.imageAlt : line.name,
-        priceExVat,
-        priceInclVat,
-        quantity:
-          typeof line.quantity === "number" && line.quantity > 0
-            ? line.quantity
-            : 1,
-      } satisfies CartLine;
-    })
-    .filter((line): line is CartLine => Boolean(line));
+    lines.push({
+      supplierId: line.supplierId,
+      supplierName:
+        typeof line.supplierName === "string" ? line.supplierName : "Supplier",
+      productId: line.productId,
+      name: line.name,
+      variationId:
+        typeof line.variationId === "string" && line.variationId
+          ? line.variationId
+          : undefined,
+      variationName:
+        typeof line.variationName === "string" && line.variationName
+          ? line.variationName
+          : undefined,
+      unit: typeof line.unit === "string" ? line.unit : "",
+      image: typeof line.image === "string" ? line.image : "",
+      imageAlt: typeof line.imageAlt === "string" ? line.imageAlt : line.name,
+      priceExVat,
+      priceInclVat,
+      quantity:
+        typeof line.quantity === "number" && line.quantity > 0
+          ? line.quantity
+          : 1,
+    });
+  }
+  return lines;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
