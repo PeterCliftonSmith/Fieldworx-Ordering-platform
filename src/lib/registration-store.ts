@@ -184,7 +184,8 @@ export function toPublicCustomer(
 export function sanitizeRegistrationForAdmin(
   registration: CustomerRegistration,
 ) {
-  const { passwordHash: _passwordHash, ...rest } = registration;
+  const { passwordHash, ...rest } = registration;
+  void passwordHash;
   return rest;
 }
 
