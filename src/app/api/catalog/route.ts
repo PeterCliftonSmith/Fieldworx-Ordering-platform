@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { listSuppliers, getSupplier } from "@/lib/catalog-store";
 import {
   redactCatalogPrices,
