@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import type { CustomerOrder } from "@/data/orders";
 import { useCart } from "@/lib/cart";
 import { formatZar } from "@/lib/format";
 
@@ -16,23 +17,38 @@ export function OrderDraft() {
     clear,
     ready,
   } = useCart();
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState<CustomerOrder | null>(
+    null,
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!ready) {
     return <p className="muted">Loading your draft order…</p>;
   }
 
-  if (submitted) {
+  if (submittedOrder) {
     return (
       <div className="order-success">
-        <h2>Order draft sent</h2>
+        <h2>Order submitted</h2>
         <p>
-          This demo confirms the flow. In the live product, suppliers would
-          receive the order and your kitchen would get a confirmation.
+          Your order <strong>{submittedOrder.id}</strong> is saved to your
+          account history.
         </p>
-        <Link href="/suppliers" className="btn btn-primary">
-          Keep browsing
-        </Link>
+        <div className="register-actions">
+          <Link
+            href={`/orders/${submittedOrder.id}`}
+            className="btn btn-primary"
+          >
+            View this order
+          </Link>
+          <Link href="/orders" className="btn btn-ghost">
+            Order history
+          </Link>
+          <Link href="/suppliers" className="btn btn-ghost">
+            Keep browsing
+          </Link>
+        </div>
       </div>
     );
   }
@@ -42,9 +58,14 @@ export function OrderDraft() {
       <div className="order-empty">
         <h2>Your order is empty</h2>
         <p>Browse suppliers and add the lines your kitchen needs.</p>
-        <Link href="/suppliers" className="btn btn-primary">
-          Browse suppliers
-        </Link>
+        <div className="register-actions">
+          <Link href="/suppliers" className="btn btn-primary">
+            Browse suppliers
+          </Link>
+          <Link href="/orders" className="btn btn-ghost">
+            View order history
+          </Link>
+        </div>
       </div>
     );
   }
@@ -63,6 +84,32 @@ export function OrderDraft() {
         supplierName: line.supplierName,
         lines: [line],
       });
+    }
+  }
+
+  async function submitOrder() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ lines }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        order?: CustomerOrder;
+      };
+      if (!response.ok || !data.order) {
+        throw new Error(data.error || "Could not submit order.");
+      }
+      clear();
+      setSubmittedOrder(data.order);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not submit order.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -145,23 +192,29 @@ export function OrderDraft() {
           <strong>{formatZar(totalInclVat)}</strong>
         </div>
         <p className="muted small">
-          Delivery fees and supplier cut-offs would be confirmed before placing
-          a live order.
+          Submitted orders are saved to your account history.
         </p>
+        {error ? <p className="admin-error">{error}</p> : null}
         <div className="order-summary-actions">
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => {
-              clear();
-              setSubmitted(true);
-            }}
+            onClick={submitOrder}
+            disabled={submitting}
           >
-            Submit draft order
+            {submitting ? "Submitting…" : "Submit order"}
           </button>
-          <button type="button" className="btn btn-ghost" onClick={clear}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={clear}
+            disabled={submitting}
+          >
             Clear draft
           </button>
+          <Link href="/orders" className="btn btn-ghost">
+            Order history
+          </Link>
         </div>
       </div>
     </div>

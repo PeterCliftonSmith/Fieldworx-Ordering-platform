@@ -10,6 +10,7 @@ const links = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/register", label: "Register" },
   { href: "/order", label: "Order" },
+  { href: "/orders", label: "My orders", authOnly: true },
 ];
 
 export function SiteHeader() {
@@ -25,6 +26,9 @@ export function SiteHeader() {
         </Link>
         <nav className="site-nav" aria-label="Primary">
           {links.map((link) => {
+            if ("authOnly" in link && link.authOnly && !(authReady && customer)) {
+              return null;
+            }
             const active =
               pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (

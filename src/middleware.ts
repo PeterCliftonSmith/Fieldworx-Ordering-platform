@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/order" || pathname.startsWith("/order/")) {
+  if (pathname === "/order" || pathname.startsWith("/order/") || pathname === "/orders" || pathname.startsWith("/orders/")) {
     const session = await parseCustomerSessionToken(
       request.cookies.get(CUSTOMER_COOKIE)?.value,
     );
@@ -44,5 +44,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/order", "/order/:path*"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/order",
+    "/order/:path*",
+    "/orders",
+    "/orders/:path*",
+  ],
 };

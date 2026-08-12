@@ -1365,6 +1365,27 @@ img {
   margin-top: 1rem;
 }
 
+.orders-table-wrap {
+  overflow-x: auto;
+  padding-bottom: 3rem;
+}
+
+.status-submitted,
+.status-confirmed {
+  color: var(--field);
+  background: color-mix(in srgb, var(--leaf) 14%, white);
+}
+
+.status-fulfilled {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--sand) 35%, white);
+}
+
+.status-cancelled {
+  color: #8a2f1f;
+  background: color-mix(in srgb, #8a2f1f 10%, white);
+}
+
 @media (max-width: 900px) {
   .admin-grid,
   .admin-product-row,

@@ -19,6 +19,8 @@ New accounts stay **pending** until approved in admin under **Registrations**. A
 
 Ordering (`/order` and add-to-order) requires a signed-in approved account.
 
+Submitted orders are saved to `data/orders.json`. Customers can review them at `/orders` (order history) and `/orders/[id]`.
+
 Submissions are stored in `data/registrations.json`.
 
 ## Admin catalogue
