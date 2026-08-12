@@ -11,16 +11,16 @@ export const metadata: Metadata = {
 
 const steps = [
   {
+    title: "Register your restaurant",
+    body: "Share your business, buyer, accounts, delivery, and trading details so Fieldworx can set you up.",
+  },
+  {
     title: "Browse suppliers",
-    body: "Restaurants open catalogues from produce, seafood, meat, and pantry partners already on Fieldworx.",
+    body: "Open catalogues from produce, seafood, meat, and pantry partners already on Fieldworx.",
   },
   {
     title: "Build one draft order",
     body: "Add lines across suppliers as you plan the week. Quantities stay with you until you submit.",
-  },
-  {
-    title: "Fieldworx routes the order",
-    body: "We sit in the middle — suppliers receive clean orders, kitchens keep a single record of what was requested.",
   },
 ];
 
@@ -58,8 +58,8 @@ export default function HowItWorksPage() {
               </article>
             ))}
             <div>
-              <Link href="/suppliers" className="btn btn-primary">
-                Start with suppliers
+              <Link href="/register" className="btn btn-primary">
+                Register your restaurant
               </Link>
             </div>
           </div>

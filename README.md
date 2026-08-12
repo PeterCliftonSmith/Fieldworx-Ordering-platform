@@ -11,13 +11,22 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the customer site.
 
+## Customer registration
+
+Restaurants can apply at [http://localhost:3000/register](http://localhost:3000/register).
+
+Collected details include registered and trading names, VAT and registration numbers, landline, buyer and accounts contacts, delivery address, and trading times.
+
+Submissions are stored in `data/registrations.json` and can be reviewed in admin under **Registrations**.
+
 ## Admin catalogue
 
 Manage suppliers and products at [http://localhost:3000/admin](http://localhost:3000/admin).
 
 1. Sign in with the admin password
 2. Add, edit, or remove suppliers
-3. Edit each supplier’s product list (name, category, unit, price)
+3. Edit each supplier’s product list (name, category, unit, price, image, VAT amounts)
+4. Review customer registrations
 
 Default demo password: `fieldworx-admin`
 
@@ -30,8 +39,8 @@ Catalogue data is stored in `data/catalog.json`. The customer-facing pages read 
 
 ## What’s included
 
-- Customer landing, suppliers, catalogues, draft order, and how-it-works
-- Password-protected admin for supplier and product CRUD
+- Customer landing, suppliers, catalogues, draft order, registration, and how-it-works
+- Password-protected admin for supplier/product CRUD and registration review
 - Sample South African trade catalogue (ZAR)
 
 This is still a demo scaffold — orders stay in the browser, and admin auth is a simple shared password meant for local/trusted use.

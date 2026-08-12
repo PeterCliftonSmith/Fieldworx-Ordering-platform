@@ -18,6 +18,7 @@ export default function AdminDashboardLayout({
           </div>
           <nav className="admin-nav">
             <Link href="/admin">Suppliers</Link>
+            <Link href="/admin/registrations">Registrations</Link>
             <Link href="/admin/suppliers/new">Add supplier</Link>
             <Link href="/">View site</Link>
             <AdminLogoutButton />
