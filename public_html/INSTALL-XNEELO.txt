@@ -1,0 +1,39 @@
+Fieldworx — upload this whole folder to Xneelo
+==============================================
+
+1) In Xneelo, create a MySQL database and note:
+   - MySQL hostname (may NOT be localhost)
+   - database name
+   - username
+   - password
+
+2) Upload EVERYTHING inside this public_html folder into your
+   hosting package document root (usually also called public_html).
+   After upload you should see index.php, .htaccess, app/, assets/, sql/, etc.
+   at the site root — not nested as public_html/public_html/...
+
+3) Edit config.php (same folder as index.php):
+   - db.host  = MySQL hostname from the panel
+   - db.name  = database name
+   - db.user  = database user
+   - db.pass  = database password
+   - db.socket = ''   (leave empty when DB is on another server)
+   - admin_password = choose a strong password
+
+4) Import the database in phpMyAdmin (or MySQL):
+   Prefer:  sql/fieldworx-tables-only.sql
+   (use this when the empty database already exists in the panel)
+
+   Alternative: sql/fieldworx-database.sql
+   (includes CREATE DATABASE — only if your panel allows it)
+
+5) Visit your domain.
+   Admin login:  /admin/login
+   Default admin password is whatever you set in config.php
+   (template default is fieldworx-admin — change it).
+
+Notes
+-----
+- Sample suppliers/products/varieties are included in the SQL dump.
+- Registrations and orders start empty.
+- Keep config.php private (already blocked by .htaccess).
