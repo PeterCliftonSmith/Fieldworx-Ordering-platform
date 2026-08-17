@@ -1,0 +1,26 @@
+# dependencies / tooling leftovers
+/node_modules
+/.next/
+/out/
+/build
+/vendor
+
+# local config & secrets
+/config.php
+.env
+.env.*
+
+# OS / IDE
+.DS_Store
+*.pem
+.idea/
+.vscode/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# typescript leftovers (if any)
+*.tsbuildinfo
+next-env.d.ts

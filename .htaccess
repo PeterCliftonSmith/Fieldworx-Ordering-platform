@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Protect application source and config
+RewriteRule ^(app|sql|storage|data)/ - [F,L]
+RewriteRule ^config\.php$ - [F,L]
+RewriteRule ^config\.example\.php$ - [F,L]
+
+# Serve existing files/directories directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Front controller
+RewriteRule ^ index.php [L]
